@@ -11,5 +11,4 @@ UsuarioDTO crear(CrearUsuarioRequest crearUsuarioRequest);
 UsuarioDTO actualizar(Long id, ActualizarUsuarioRequest ActualizarUsuarioRequest);
 UsuarioDTO leerid(String documento);
 List<UsuarioDTO> leer();
-void eliminar(Long id);
 }

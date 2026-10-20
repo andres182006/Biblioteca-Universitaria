@@ -23,23 +23,15 @@ public class VideobeamController {
     private final ResponseDTOService responseDTOService;
 
     @PostMapping("/crear")
-    public ResponseEntity<VideobeamDTO> crear(@Valid @RequestBody CrearVideombeamRequest crearEstudianteRequest,
-                                              BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return (ResponseEntity<VideobeamDTO>) responseDTOService.response(HttpStatus.BAD_REQUEST);
-        }else {
-            return (ResponseEntity<VideobeamDTO>) responseDTOService.response(
-                    videobeamService.crear(crearEstudianteRequest), HttpStatus.CREATED);
-        }
+    public ResponseEntity<?> crear(@Valid @RequestBody CrearVideombeamRequest crearEstudianteRequest) {
+        return responseDTOService.response(
+                videobeamService.crear(crearEstudianteRequest),HttpStatus.CREATED);
     }
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
-            @Valid@RequestBody CrearVideombeamRequest crearVideombeamRequest,
-            BindingResult bindingResult){
-        if (bindingResult.hasErrors()) {
-            return responseDTOService.response(HttpStatus.BAD_REQUEST);
-        }
+            @Valid@RequestBody CrearVideombeamRequest crearVideombeamRequest){
+
         return  responseDTOService.response(
                 videobeamService.actualizar(id, crearVideombeamRequest), HttpStatus.OK
         );

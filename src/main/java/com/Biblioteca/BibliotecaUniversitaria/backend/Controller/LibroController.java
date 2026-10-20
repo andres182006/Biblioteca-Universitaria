@@ -24,23 +24,16 @@ public class LibroController {
     private final ResponseDTOService  responseDTOService;
 
     @PostMapping("/Crear")
-    public ResponseEntity<LibroDTO> crear(@Valid @RequestBody CrearLibroRequest crearLibroRequest,
-                                          BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return (ResponseEntity<LibroDTO>) responseDTOService.response(HttpStatus.BAD_REQUEST);
-        }else {
-            return (ResponseEntity<LibroDTO>) responseDTOService.response
-                    (libroService.crear(crearLibroRequest), HttpStatus.CREATED);
-        }
+    public ResponseEntity<?> crear(@Valid @RequestBody CrearLibroRequest crearLibroRequest) {
+        return responseDTOService.response(
+                libroService.crear(crearLibroRequest), HttpStatus.CREATED);
+
     }
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
-            @Valid@RequestBody ActualizarLibroRequest actualizarLibroRequest,
-            BindingResult bindingResult){
-        if (bindingResult.hasErrors()) {
-            return (ResponseEntity<?>) responseDTOService.response(HttpStatus.BAD_REQUEST);
-        }
+            @Valid@RequestBody ActualizarLibroRequest actualizarLibroRequest){
+
         return responseDTOService.response
                 (libroService.actualizar(id,actualizarLibroRequest), HttpStatus.OK);
     }

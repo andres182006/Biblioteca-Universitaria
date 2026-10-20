@@ -9,7 +9,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin(origins="*", maxAge=3600)
@@ -21,23 +20,16 @@ public class UsuarioController {
     private final ResponseDTOService responseDTOService;
 
     @PostMapping("/crear")
-    public ResponseEntity<UsuarioDTO> crear(@Valid @RequestBody CrearUsuarioRequest crearUsuarioRequest,
-                                            BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return (ResponseEntity<UsuarioDTO>) responseDTOService.response(HttpStatus.BAD_REQUEST);
-        }else {
-            return (ResponseEntity<UsuarioDTO>) responseDTOService.response(
-                    usuarioService.crear(crearUsuarioRequest), HttpStatus.CREATED);
-        }
+    public ResponseEntity<?> crear(@Valid @RequestBody CrearUsuarioRequest crearUsuarioRequest) {
+        return responseDTOService.response(
+                usuarioService.crear(crearUsuarioRequest), HttpStatus.CREATED);
+
 }
 @PutMapping("/{id}")
-public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody ActualizarUsuarioRequest actualizarUsuarioRequest,
-                                    BindingResult bindingResult) {
-    if (bindingResult.hasErrors()) {
-    return responseDTOService.response(HttpStatus.BAD_REQUEST);
-    }
-    return responseDTOService.response(
-            usuarioService.actualizar(id, actualizarUsuarioRequest), HttpStatus.OK);
+public ResponseEntity<?> actualizar(@PathVariable Long id,
+                                    @Valid @RequestBody ActualizarUsuarioRequest actualizarUsuarioRequest) {
+        return responseDTOService.response(
+                usuarioService.actualizar(id,actualizarUsuarioRequest), HttpStatus.OK);
 }
 @GetMapping("/{documento}")
     public ResponseEntity<?> leer(@PathVariable String documento) {
@@ -49,9 +41,5 @@ public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody A
         return responseDTOService.response(
                 usuarioService.leer(), HttpStatus.OK);
 }
-@DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id){
-        usuarioService.eliminar(id);
-        return responseDTOService.response(HttpStatus.NO_CONTENT);
-}
+
 }

@@ -2,10 +2,13 @@ package com.Biblioteca.BibliotecaUniversitaria.backend.Service.impl;
 
 import com.Biblioteca.BibliotecaUniversitaria.backend.DTO.VideobeamDTO;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Entities.Videobeam;
+import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.ReservaRepository;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.VideobeamRepository;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Crear.CrearVideombeamRequest;
+import com.Biblioteca.BibliotecaUniversitaria.backend.Service.IReservaService;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Service.IVideonbeamService;
 import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.AlreadyExists;
+import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.ConflictoException;
 import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.EstudianteNoEncontradoException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 public class VideobeamService implements IVideonbeamService {
     private final VideobeamRepository videobeamRepository;
     private final ModelMapper modelMapper;
+    private final ReservaRepository  reservaRepository;
 
     //crear
     @Override
@@ -73,6 +77,9 @@ public class VideobeamService implements IVideonbeamService {
     public void eliminar(Long id) {
         if (!videobeamRepository.existsById(id)) {
             throw new EstudianteNoEncontradoException("video no encontrado"  + id);
+        }
+        if (reservaRepository.existsByVideobeamId(id)){
+            throw new ConflictoException("no se puede eliminar porque el videobeam tiene una reserva registrada");
         }
         videobeamRepository.deleteById(id);
 

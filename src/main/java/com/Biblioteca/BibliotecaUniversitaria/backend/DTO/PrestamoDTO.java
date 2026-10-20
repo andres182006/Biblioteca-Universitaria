@@ -30,4 +30,7 @@ public class PrestamoDTO {
 
     private Prestamo.EstadoPrestamo estado;
 
+    // Calculado, no se guarda en la base de datos
+    private Long diasenprestamo;
+
 }

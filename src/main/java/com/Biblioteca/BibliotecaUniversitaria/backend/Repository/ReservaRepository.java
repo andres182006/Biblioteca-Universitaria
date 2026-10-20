@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -46,4 +47,9 @@ public interface ReservaRepository extends JpaRepository<Reserva,Long> {
 
 
     Optional<Reserva> findById(Long id);
+
+    boolean existsByVideobeamId(Long idVideobeam);
+    List<Reserva> findAllByOrderByFechareservaDescHorainicioDesc();
+
+    List<Reserva> findByUsuarioprofesorIdOrderByFechareservaDescHorainicioDesc(Long idusuario);
 }

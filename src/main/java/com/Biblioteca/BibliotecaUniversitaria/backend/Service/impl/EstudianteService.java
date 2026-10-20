@@ -4,10 +4,13 @@ import com.Biblioteca.BibliotecaUniversitaria.backend.DTO.EstudianteDTO;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Entities.Estudiante;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Entities.Usuario;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.EstudianteRepository;
+import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.PrestamoRepository;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Crear.CrearEstudianteRequest;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Service.IEstudianteService;
 import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.AlreadyExists;
+import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.ConflictoException;
 import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.EstudianteNoEncontradoException;
+import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.RecursoNoEncontradoException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -22,17 +25,19 @@ import java.util.stream.Collectors;
 public class EstudianteService implements IEstudianteService {
     private final EstudianteRepository estudianteRepository;
     private final ModelMapper modelMapper;
+    private final PrestamoRepository prestamoRepository;
 
     //crea estudiante
     @Override
     @Transactional(rollbackOn =  Exception.class)
-    public EstudianteDTO crear(CrearEstudianteRequest crearEstudianteRequest) {
+    public EstudianteDTO crear(CrearEstudianteRequest crearEstudianteRequest ) {
         Optional<Estudiante> estudianteOptional = estudianteRepository.findByDocumento(crearEstudianteRequest.getDocumento());
         //Validar documento unico
         if (estudianteOptional.isPresent()){
             throw new AlreadyExists("Error: el documento ya existente"
             + crearEstudianteRequest.getDocumento());
         }
+
         Estudiante newEstudiante = new Estudiante();
         newEstudiante.setDocumento(crearEstudianteRequest.getDocumento());
         newEstudiante.setCorreo(crearEstudianteRequest.getCorreo());
@@ -45,8 +50,14 @@ public class EstudianteService implements IEstudianteService {
     @Transactional(rollbackOn =   Exception.class)
     public EstudianteDTO actualizar(Long id, CrearEstudianteRequest crearEstudianteRequest) {
         Estudiante estudiante = estudianteRepository.findById(id)
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Estudiante no encontrado con id" + id));
+        //Validar documento unico
+        if (!estudiante.getDocumento().equals(crearEstudianteRequest.getDocumento())
+                && estudianteRepository.findByDocumento(crearEstudianteRequest.getDocumento()).isPresent()) {
+            throw new AlreadyExists("Error: el documento ya existe: "
+                    + crearEstudianteRequest.getDocumento());
+        }
         estudiante.setNombrecompleto(crearEstudianteRequest.getNombrecompleto());
         estudiante.setDocumento(crearEstudianteRequest.getDocumento());
         estudiante.setCorreo(crearEstudianteRequest.getCorreo());
@@ -58,7 +69,7 @@ public class EstudianteService implements IEstudianteService {
     @Override
     public EstudianteDTO leer(String documento) {
         Estudiante estudiante = estudianteRepository.findByDocumento(documento)
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Estudiante no encontrado con ese numero de documento" + documento));
         return modelMapper.map(estudiante, EstudianteDTO.class);
     }
@@ -75,7 +86,10 @@ public class EstudianteService implements IEstudianteService {
     @Transactional(rollbackOn =   Exception.class)
     public void eliminar(Long id) {
         if (!estudianteRepository.existsById(id)) {
-            throw new EstudianteNoEncontradoException("Estudiante no encontrado con id" + id);
+            throw new RecursoNoEncontradoException("Estudiante no encontrado con id" + id);
+        }
+        if (prestamoRepository.existsByEstudianteId(id)) {
+            throw new ConflictoException("No se puede eliminar: el estudiante tiene préstamos registrados");
         }
         estudianteRepository.deleteById(id);
 

@@ -1,6 +1,7 @@
 package com.Biblioteca.BibliotecaUniversitaria.backend.Service.impl;
 
 import com.Biblioteca.BibliotecaUniversitaria.backend.DTO.ReservaDTO;
+import com.Biblioteca.BibliotecaUniversitaria.backend.DTO.VideobeamDTO;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Entities.Reserva;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Entities.Usuario;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Entities.Videobeam;
@@ -10,8 +11,7 @@ import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.VideobeamReposi
 import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Actualizar.ActualizarReservaRequest;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Crear.CrearReservaRequest;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Service.IReservaService;
-import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.AlreadyExists;
-import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.EstudianteNoEncontradoException;
+import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -35,27 +35,23 @@ public class ReservaService implements IReservaService {
     @Transactional(rollbackOn = Exception.class)
     public ReservaDTO crear(CrearReservaRequest crearReservaRequest) {
         // 1. Validar el horario
-        if (!crearReservaRequest.getHorainicio().isBefore(crearReservaRequest.getHorafin())) {
-            throw new EstudianteNoEncontradoException("La hora de inicio debe ser anterior a la hora de fin");
-        }
-        if (crearReservaRequest.getFechareserva().equals(LocalDate.now())
-                && crearReservaRequest.getHorainicio().isBefore(LocalTime.now())) {
-            throw new EstudianteNoEncontradoException("No se puede reservar en una hora que ya pasó");
-        }
+        validarHorario(crearReservaRequest.getFechareserva(),
+                crearReservaRequest.getHorainicio(),
+                crearReservaRequest.getHorafin());
         // 2. Validar que sea un profesor (RNF7)
         Usuario profesor = usuarioRepository.findById(crearReservaRequest.getIdusuarioprofesor())
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Usuario no encontrado con id: " + crearReservaRequest.getIdusuarioprofesor()));
         if (profesor.getRol() != Usuario.RolUsuario.profesor) {
-            throw new EstudianteNoEncontradoException(
+            throw new ReglaNegocioException(
                     "Solo los usuarios con rol profesor pueden reservar videobeams");
         }
         // 3. Buscar el videobeam bloqueando su fila hasta terminar la transacción
         Videobeam videobeam = videobeamRepository.findByIdForUpdate(crearReservaRequest.getIdvideobeam())
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Videobeam no encontrado con id: " + crearReservaRequest.getIdvideobeam()));
         if (videobeam.getEstado() == Videobeam.EstadoVideobeam.mantenimiento) {
-            throw new EstudianteNoEncontradoException("El videobeam está en mantenimiento");
+            throw new ReglaNegocioException("El videobeam está en mantenimiento");
         }
 
 // 4. Validar que el horario esté libre (RF20)
@@ -84,22 +80,22 @@ public class ReservaService implements IReservaService {
     @Transactional(rollbackOn = Exception.class)
     public ReservaDTO actualizar(Long id, ActualizarReservaRequest actualizarReservaRequest) {
         Reserva reserva = reservaRepository.findById(id)
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Reserva no encontrada con id: " + id));
 
         // 1. Solo se modifican reservas pendientes
         if (reserva.getEstado() != Reserva.EstadoReserva.pendiente) {
-            throw new EstudianteNoEncontradoException(
+            throw new ReglaNegocioException(
                     "Solo se pueden modificar reservas en estado pendiente");
         }
 
         // 2. Permisos: el profesor solo modifica las suyas
         Usuario usuario = usuarioRepository.findById(actualizarReservaRequest.getIdusuario())
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Usuario no encontrado con id: " + actualizarReservaRequest.getIdusuario()));
         boolean esDuenio = reserva.getUsuarioprofesor().getId().equals(usuario.getId());
         if (usuario.getRol() == Usuario.RolUsuario.profesor && !esDuenio) {
-            throw new EstudianteNoEncontradoException(
+            throw new ReglaNegocioException(
                     "Un profesor solo puede modificar sus propias reservas");
         }
 
@@ -108,10 +104,10 @@ public class ReservaService implements IReservaService {
 
         // 4. Videobeam con bloqueo de fila
         Videobeam videobeam = videobeamRepository.findByIdForUpdate(actualizarReservaRequest.getIdvideobeam())
-                .orElseThrow(() -> new EstudianteNoEncontradoException(
+                .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Videobeam no encontrado con id: " + actualizarReservaRequest.getIdvideobeam()));
         if (videobeam.getEstado() == Videobeam.EstadoVideobeam.mantenimiento) {
-            throw new EstudianteNoEncontradoException("El videobeam está en mantenimiento");
+            throw new ReglaNegocioException("El videobeam está en mantenimiento");
         }
 
         // 5. Traslape ignorando esta misma reserva
@@ -139,26 +135,98 @@ public class ReservaService implements IReservaService {
     @Override
     public ReservaDTO leerid(Long id) {
         Reserva reserva = reservaRepository.findById(id)
-                .orElseThrow(()-> new EstudianteNoEncontradoException(
+                .orElseThrow(()-> new RecursoNoEncontradoException(
                         "Reserva no encontrado con id: " + id));
         return modelMapper.map(reserva, ReservaDTO.class);
     }
-
     @Override
-    public List<ReservaDTO> listar() {
-        return reservaRepository.findAll()
-                .stream()
-                .map(reserva -> modelMapper.map(reserva, ReservaDTO.class))
+    public List<ReservaDTO> listar(Long idusuario) {
+        Usuario usuario = buscarUsuario(idusuario);
+        List<Reserva> reservas = usuario.getRol() == Usuario.RolUsuario.profesor
+                ? reservaRepository.findByUsuarioprofesorIdOrderByFechareservaDescHorainicioDesc(usuario.getId())
+                : reservaRepository.findAllByOrderByFechareservaDescHorainicioDesc();
+        return reservas.stream()
+                .map(r -> modelMapper.map(r, ReservaDTO.class))
                 .collect(Collectors.toList());
     }
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public ReservaDTO cancelar(Long id, Long idusuario) {
+        Reserva reserva = buscarReserva(id);
+        Usuario usuario = buscarUsuario(idusuario);
 
+        boolean esDuenio = reserva.getUsuarioprofesor().getId().equals(usuario.getId());
+        if (usuario.getRol() == Usuario.RolUsuario.profesor && !esDuenio) {
+            throw new ReglaNegocioException("Un profesor solo puede cancelar sus propias reservas");
+        }
+        if (reserva.getEstado() != Reserva.EstadoReserva.pendiente) {
+            throw new ConflictoException("Solo se pueden cancelar reservas en estado pendiente");
+        }
+
+        reserva.setEstado(Reserva.EstadoReserva.cancelado);
+        return modelMapper.map(reservaRepository.save(reserva), ReservaDTO.class);
+    }
+
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public ReservaDTO entregar(Long id, Long idusuario) {
+        return cambiarEstado(id, idusuario,
+                Reserva.EstadoReserva.pendiente, Reserva.EstadoReserva.entregado);
+    }
+
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public ReservaDTO devolver(Long id, Long idusuario) {
+        return cambiarEstado(id, idusuario,
+                Reserva.EstadoReserva.entregado, Reserva.EstadoReserva.devuelto);
+    }
+
+    private ReservaDTO cambiarEstado(Long id, Long idusuario,
+                                     Reserva.EstadoReserva requerido,
+                                     Reserva.EstadoReserva nuevo) {
+        Reserva reserva = buscarReserva(id);
+        Usuario usuario = buscarUsuario(idusuario);
+
+        if (usuario.getRol() == Usuario.RolUsuario.profesor) {
+            throw new ReglaNegocioException(
+                    "Solo el bibliotecario o el administrador pueden registrar la entrega y la devolución");
+        }
+        if (reserva.getEstado() != requerido) {
+            throw new ConflictoException("La reserva debe estar en estado " + requerido
+                    + " (estado actual: " + reserva.getEstado() + ")");
+        }
+
+        reserva.setEstado(nuevo);
+        return modelMapper.map(reservaRepository.save(reserva), ReservaDTO.class);
+    }
+
+    private Reserva buscarReserva(Long id) {
+        return reservaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Reserva no encontrada con id: " + id));
+    }
+
+    private Usuario buscarUsuario(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario no encontrado con id: " + id));
+    }
+    @Override
+    public List<VideobeamDTO> disponibilidad(LocalDate fecha, LocalTime horainicio, LocalTime horafin) {
+        validarHorario(fecha, horainicio, horafin);
+        return videobeamRepository.findDisponibles(fecha, horainicio, horafin,
+                        Videobeam.EstadoVideobeam.mantenimiento, Reserva.EstadoReserva.cancelado)
+                .stream()
+                .map(v -> modelMapper.map(v, VideobeamDTO.class))
+                .collect(Collectors.toList());
+    }
     // Se usa en crear y en actualizar, para no repetir las validaciones
     private void validarHorario(LocalDate fecha, LocalTime inicio, LocalTime fin) {
         if (!inicio.isBefore(fin)) {
-            throw new EstudianteNoEncontradoException("La hora de inicio debe ser anterior a la hora de fin");
+            throw new ReglaNegocioException("La hora de inicio debe ser anterior a la hora de fin");
         }
         if (fecha.equals(LocalDate.now()) && inicio.isBefore(LocalTime.now())) {
-            throw new EstudianteNoEncontradoException("No se puede reservar en una hora que ya pasó");
+            throw new ReglaNegocioException("No se puede reservar en una hora que ya pasó");
         }
     }
     }

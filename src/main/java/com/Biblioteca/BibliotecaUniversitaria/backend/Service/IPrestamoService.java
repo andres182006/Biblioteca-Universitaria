@@ -6,9 +6,9 @@ import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Crear.CrearPrestam
 import java.util.List;
 
 public interface IPrestamoService {
-PrestamoDTO crear(CrearPrestamoRequest crearPrestamoRequest);
-PrestamoDTO registrarDevolucion(Long idDevolucion);
-PrestamoDTO leer(Long idPrestamo);
-List<PrestamoDTO> listaractivos();
-List<PrestamoDTO> listarhistorial();
+    PrestamoDTO crear(CrearPrestamoRequest crearPrestamoRequest);
+    PrestamoDTO registrarDevolucion(Long id);
+    PrestamoDTO leer(Long id);
+    List<PrestamoDTO> listarActivos();
+    List<PrestamoDTO> listarHistorial();
 }
