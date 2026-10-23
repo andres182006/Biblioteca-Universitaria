@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +27,10 @@ public interface PrestamoRepository extends JpaRepository<Prestamo,Long> {
     boolean existsByEstudianteId(Long idEstudiante);
 
     boolean existsByLibroId(Long idLibro);
+    List<Prestamo> findByEstadoOrderByIdAsc(Prestamo.EstadoPrestamo estado);
+
+    List<Prestamo> findByEstudianteIdOrderByIdDesc(Long idEstudiante);
+
+    boolean existsByEstudianteIdAndLibroIdAndEstadoIn(Long idEstudiante, Long idLibro,
+                                                      Collection<Prestamo.EstadoPrestamo> estados);
 }

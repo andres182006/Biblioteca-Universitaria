@@ -10,13 +10,13 @@ import java.time.LocalTime;
 import java.util.List;
 
 public interface IReservaService {
-    ReservaDTO crear(CrearReservaRequest crearReservaRequest);
-    ReservaDTO actualizar(Long id, ActualizarReservaRequest actualizarReservaRequest);
+    ReservaDTO crear(CrearReservaRequest crearReservaRequest, String correo);
+    ReservaDTO actualizar(Long id, ActualizarReservaRequest actualizarReservaRequest, String correo);
     ReservaDTO leerid(Long id);
-    List<ReservaDTO> listar(Long idusuario);
-    ReservaDTO cancelar(Long id, Long idusuario);
-    ReservaDTO entregar(Long id, Long idusuario);
-    ReservaDTO devolver(Long id, Long idusuario);
+    List<ReservaDTO> listar(String correo);
+    ReservaDTO cancelar(Long id, String correo);
+    ReservaDTO entregar(Long id, String correo);
+    ReservaDTO devolver(Long id, String correo);
     List<VideobeamDTO> disponibilidad(LocalDate fecha, LocalTime horainicio, LocalTime horafin);
 
 }

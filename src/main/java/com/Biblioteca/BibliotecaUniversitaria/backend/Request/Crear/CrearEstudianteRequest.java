@@ -18,9 +18,14 @@ public class CrearEstudianteRequest {
     @Size(max = 20)
     private String documento;
 
+    @NotBlank(message = "el correo es obligatorio")
     @Email(message = "el correo no tiene un formato valido")
     @Size(max = 120)
     private String correo;
+
+    @NotBlank(message = "la contraseña es obligatoria")
+    @Size(min = 8, max = 72, message = "la contraseña debe tener entre 8 y 72 caracteres")
+    private String contrasena;
 
     @Size(max = 20)
     private String telefono;

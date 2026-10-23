@@ -33,15 +33,13 @@ public class ReservaService implements IReservaService {
     //crear
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ReservaDTO crear(CrearReservaRequest crearReservaRequest) {
+    public ReservaDTO crear(CrearReservaRequest crearReservaRequest, String correo) {
         // 1. Validar el horario
         validarHorario(crearReservaRequest.getFechareserva(),
                 crearReservaRequest.getHorainicio(),
                 crearReservaRequest.getHorafin());
         // 2. Validar que sea un profesor (RNF7)
-        Usuario profesor = usuarioRepository.findById(crearReservaRequest.getIdusuarioprofesor())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario no encontrado con id: " + crearReservaRequest.getIdusuarioprofesor()));
+        Usuario profesor = buscarUsuario(correo);
         if (profesor.getRol() != Usuario.RolUsuario.profesor) {
             throw new ReglaNegocioException(
                     "Solo los usuarios con rol profesor pueden reservar videobeams");
@@ -78,7 +76,7 @@ public class ReservaService implements IReservaService {
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ReservaDTO actualizar(Long id, ActualizarReservaRequest actualizarReservaRequest) {
+    public ReservaDTO actualizar(Long id, ActualizarReservaRequest actualizarReservaRequest, String correo) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Reserva no encontrada con id: " + id));
@@ -90,9 +88,7 @@ public class ReservaService implements IReservaService {
         }
 
         // 2. Permisos: el profesor solo modifica las suyas
-        Usuario usuario = usuarioRepository.findById(actualizarReservaRequest.getIdusuario())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario no encontrado con id: " + actualizarReservaRequest.getIdusuario()));
+        Usuario usuario = buscarUsuario(correo);
         boolean esDuenio = reserva.getUsuarioprofesor().getId().equals(usuario.getId());
         if (usuario.getRol() == Usuario.RolUsuario.profesor && !esDuenio) {
             throw new ReglaNegocioException(
@@ -140,8 +136,8 @@ public class ReservaService implements IReservaService {
         return modelMapper.map(reserva, ReservaDTO.class);
     }
     @Override
-    public List<ReservaDTO> listar(Long idusuario) {
-        Usuario usuario = buscarUsuario(idusuario);
+    public List<ReservaDTO> listar(String correo) {
+        Usuario usuario = buscarUsuario(correo);
         List<Reserva> reservas = usuario.getRol() == Usuario.RolUsuario.profesor
                 ? reservaRepository.findByUsuarioprofesorIdOrderByFechareservaDescHorainicioDesc(usuario.getId())
                 : reservaRepository.findAllByOrderByFechareservaDescHorainicioDesc();
@@ -151,9 +147,9 @@ public class ReservaService implements IReservaService {
     }
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ReservaDTO cancelar(Long id, Long idusuario) {
+    public ReservaDTO cancelar(Long id, String correo) {
         Reserva reserva = buscarReserva(id);
-        Usuario usuario = buscarUsuario(idusuario);
+        Usuario usuario = buscarUsuario(correo);
 
         boolean esDuenio = reserva.getUsuarioprofesor().getId().equals(usuario.getId());
         if (usuario.getRol() == Usuario.RolUsuario.profesor && !esDuenio) {
@@ -169,23 +165,23 @@ public class ReservaService implements IReservaService {
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ReservaDTO entregar(Long id, Long idusuario) {
-        return cambiarEstado(id, idusuario,
+    public ReservaDTO entregar(Long id, String correo) {
+        return cambiarEstado(id, correo,
                 Reserva.EstadoReserva.pendiente, Reserva.EstadoReserva.entregado);
     }
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ReservaDTO devolver(Long id, Long idusuario) {
-        return cambiarEstado(id, idusuario,
+    public ReservaDTO devolver(Long id, String correo) {
+        return cambiarEstado(id, correo,
                 Reserva.EstadoReserva.entregado, Reserva.EstadoReserva.devuelto);
     }
 
-    private ReservaDTO cambiarEstado(Long id, Long idusuario,
+    private ReservaDTO cambiarEstado(Long id, String correo,
                                      Reserva.EstadoReserva requerido,
                                      Reserva.EstadoReserva nuevo) {
         Reserva reserva = buscarReserva(id);
-        Usuario usuario = buscarUsuario(idusuario);
+        Usuario usuario = buscarUsuario(correo);
 
         if (usuario.getRol() == Usuario.RolUsuario.profesor) {
             throw new ReglaNegocioException(
@@ -206,10 +202,10 @@ public class ReservaService implements IReservaService {
                         "Reserva no encontrada con id: " + id));
     }
 
-    private Usuario buscarUsuario(Long id) {
-        return usuarioRepository.findById(id)
+    private Usuario buscarUsuario(String correo) {
+        return usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario no encontrado con id: " + id));
+                        "Usuario no encontrado con correo: " + correo));
     }
     @Override
     public List<VideobeamDTO> disponibilidad(LocalDate fecha, LocalTime horainicio, LocalTime horafin) {
@@ -229,5 +225,4 @@ public class ReservaService implements IReservaService {
             throw new ReglaNegocioException("No se puede reservar en una hora que ya pasó");
         }
     }
-    }
-
+}

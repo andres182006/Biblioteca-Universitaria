@@ -15,8 +15,6 @@ import java.time.LocalTime;
 @Setter
 public class CrearReservaRequest {
     // CrearReservaRequest
-    @NotNull(message = "El profesor es obligatorio")
-    private Long idusuarioprofesor;
     @NotNull(message = "El videobeam es obligatorio")
     private Long idvideobeam;
     @NotNull(message = "La fecha es obligatoria")

@@ -31,7 +31,7 @@ public class Usuario {
     @Column(name = "contrasena", nullable = false)
     private String contrasena;
 
-    public enum RolUsuario { administrador, bibliotecario, profesor }
+    public enum RolUsuario { administrador, bibliotecario, profesor, estudiante }
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
     private RolUsuario rol;

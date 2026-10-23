@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -32,5 +33,8 @@ public class PrestamoDTO {
 
     // Calculado, no se guarda en la base de datos
     private Long diasenprestamo;
+
+    private LocalDateTime fechasolicitud;
+    private String motivorechazo;
 
 }

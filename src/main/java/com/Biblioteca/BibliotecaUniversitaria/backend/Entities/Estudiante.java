@@ -40,4 +40,8 @@ public class Estudiante {
         this.fecharegistro = LocalDateTime.now();
     }
 
+    @OneToOne
+    @JoinColumn(name = "idusuario", unique = true)
+    private Usuario usuario;
+
 }

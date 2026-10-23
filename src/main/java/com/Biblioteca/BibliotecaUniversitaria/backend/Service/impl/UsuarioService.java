@@ -77,5 +77,12 @@ public class UsuarioService implements IUsuarioService {
                 .map(usuario -> modelMapper.map(usuario, UsuarioDTO.class))
                 .collect(Collectors.toList());
     }
+    @Override
+    public UsuarioDTO leerPorCorreo(String correo) {
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario no encontrado con el correo: " + correo));
+        return modelMapper.map(usuario, UsuarioDTO.class);
+    }
 
 }

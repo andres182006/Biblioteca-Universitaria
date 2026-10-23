@@ -9,6 +9,7 @@ import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.EstudianteRepos
 import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.LibroRepository;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.PrestamoRepository;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Repository.UsuarioRepository;
+import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Actualizar.RechazarPrestamoRequest;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Request.Crear.CrearPrestamoRequest;
 import com.Biblioteca.BibliotecaUniversitaria.backend.Service.IPrestamoService;
 import com.Biblioteca.BibliotecaUniversitaria.backend.base.exceptions.ConflictoException;
@@ -27,63 +28,117 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PrestamoService implements IPrestamoService {
+
     private final PrestamoRepository prestamoRepository;
     private final EstudianteRepository estudianteRepository;
     private final LibroRepository libroRepository;
     private final UsuarioRepository usuarioRepository;
     private final ModelMapper modelMapper;
 
+    // El estudiante pide el libro. No se descuenta ninguna copia todavía.
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public PrestamoDTO crear(CrearPrestamoRequest request) {
+    public PrestamoDTO solicitar(CrearPrestamoRequest request, String correo) {
+        Estudiante estudiante = buscarEstudiante(correo);
 
-        // 1. El estudiante debe existir
-        Estudiante estudiante = estudianteRepository.findById(request.getIdestudiante())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Estudiante no encontrado con id: " + request.getIdestudiante()));
-
-        // 2. Quien registra debe ser bibliotecario (HU04 y Caso de Uso 8)
-        Usuario usuario = usuarioRepository.findById(request.getIdusuario())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario no encontrado con id: " + request.getIdusuario()));
-        if (usuario.getRol() != Usuario.RolUsuario.bibliotecario) {
-            throw new ReglaNegocioException("Solo un bibliotecario puede registrar préstamos");
-        }
-
-        // 3. Se busca el libro bloqueando su fila hasta terminar la transacción
-        Libro libro = libroRepository.findByIdForUpdate(request.getIdlibro())
+        Libro libro = libroRepository.findById(request.getIdlibro())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Libro no encontrado con id: " + request.getIdlibro()));
 
-        // 4. Debe quedar al menos una copia disponible
         if (libro.getCantidaddisponible() <= 0) {
             throw new ConflictoException("No hay copias disponibles de este libro");
         }
 
-        // 5. Se descuenta una copia y se guarda el préstamo
-        // (fechaprestamo y el estado activo los asigna la entidad)
-        libro.setCantidaddisponible(libro.getCantidaddisponible() - 1);
-        libroRepository.save(libro);
+        if (prestamoRepository.existsByEstudianteIdAndLibroIdAndEstadoIn(
+                estudiante.getId(), libro.getId(),
+                List.of(Prestamo.EstadoPrestamo.solicitado, Prestamo.EstadoPrestamo.activo))) {
+            throw new ConflictoException(
+                    "Ya tienes una solicitud pendiente o un préstamo activo de este libro");
+        }
 
         Prestamo prestamo = new Prestamo();
         prestamo.setEstudiante(estudiante);
         prestamo.setLibro(libro);
-        prestamo.setUsuariobibliotecario(usuario);
+        prestamo.setEstado(Prestamo.EstadoPrestamo.solicitado);
+        return aDTO(prestamoRepository.save(prestamo));
+    }
 
+    // El bibliotecario o administrador concede el préstamo: aquí sí se descuenta la copia.
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public PrestamoDTO aprobar(Long id, String correo) {
+        Usuario aprobador = buscarUsuario(correo);
+
+        Prestamo prestamo = prestamoRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Préstamo no encontrado con id: " + id));
+        if (prestamo.getEstado() != Prestamo.EstadoPrestamo.solicitado) {
+            throw new ConflictoException("Solo se pueden aprobar solicitudes en estado solicitado");
+        }
+
+        Libro libro = libroRepository.findByIdForUpdate(prestamo.getLibro().getId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Libro no encontrado con id: " + prestamo.getLibro().getId()));
+        if (libro.getCantidaddisponible() <= 0) {
+            throw new ConflictoException("No hay copias disponibles de este libro");
+        }
+
+        libro.setCantidaddisponible(libro.getCantidaddisponible() - 1);
+        libroRepository.save(libro);
+
+        prestamo.setEstado(Prestamo.EstadoPrestamo.activo);
+        prestamo.setFechaprestamo(LocalDate.now());
+        prestamo.setUsuariobibliotecario(aprobador);
+        return aDTO(prestamoRepository.save(prestamo));
+    }
+
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public PrestamoDTO rechazar(Long id, RechazarPrestamoRequest request, String correo) {
+        Usuario revisor = buscarUsuario(correo);
+
+        Prestamo prestamo = prestamoRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Préstamo no encontrado con id: " + id));
+        if (prestamo.getEstado() != Prestamo.EstadoPrestamo.solicitado) {
+            throw new ConflictoException("Solo se pueden rechazar solicitudes en estado solicitado");
+        }
+
+        prestamo.setEstado(Prestamo.EstadoPrestamo.rechazado);
+        prestamo.setMotivorechazo(request != null ? request.getMotivo() : null);
+        prestamo.setUsuariobibliotecario(revisor);
+        return aDTO(prestamoRepository.save(prestamo));
+    }
+
+    // El estudiante retira su propia solicitud.
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public PrestamoDTO cancelar(Long id, String correo) {
+        Estudiante estudiante = buscarEstudiante(correo);
+
+        Prestamo prestamo = prestamoRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Préstamo no encontrado con id: " + id));
+        if (!prestamo.getEstudiante().getId().equals(estudiante.getId())) {
+            throw new ReglaNegocioException("Solo puedes cancelar tus propias solicitudes");
+        }
+        if (prestamo.getEstado() != Prestamo.EstadoPrestamo.solicitado) {
+            throw new ConflictoException("Solo se pueden cancelar solicitudes en estado solicitado");
+        }
+
+        prestamo.setEstado(Prestamo.EstadoPrestamo.cancelado);
         return aDTO(prestamoRepository.save(prestamo));
     }
 
     @Override
     @Transactional(rollbackOn = Exception.class)
     public PrestamoDTO registrarDevolucion(Long id) {
-
-        // Se bloquea el préstamo para que dos devoluciones simultáneas no sumen dos copias
         Prestamo prestamo = prestamoRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Préstamo no encontrado con id: " + id));
-
         if (prestamo.getEstado() != Prestamo.EstadoPrestamo.activo) {
-            throw new ConflictoException("El préstamo ya fue devuelto");
+            throw new ConflictoException("Solo se pueden devolver préstamos activos (estado actual: "
+                    + prestamo.getEstado() + ")");
         }
 
         Libro libro = libroRepository.findByIdForUpdate(prestamo.getLibro().getId())
@@ -107,29 +162,50 @@ public class PrestamoService implements IPrestamoService {
     }
 
     @Override
+    public List<PrestamoDTO> listarSolicitudes() {
+        return prestamoRepository.findByEstadoOrderByIdAsc(Prestamo.EstadoPrestamo.solicitado)
+                .stream().map(this::aDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PrestamoDTO> listarMisPrestamos(String correo) {
+        Estudiante estudiante = buscarEstudiante(correo);
+        return prestamoRepository.findByEstudianteIdOrderByIdDesc(estudiante.getId())
+                .stream().map(this::aDTO).collect(Collectors.toList());
+    }
+
+    @Override
     public List<PrestamoDTO> listarActivos() {
         return prestamoRepository.findByEstadoOrderByIdDesc(Prestamo.EstadoPrestamo.activo)
-                .stream()
-                .map(this::aDTO)
-                .collect(Collectors.toList());
+                .stream().map(this::aDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<PrestamoDTO> listarHistorial() {
         return prestamoRepository.findAllByOrderByIdDesc()
-                .stream()
-                .map(this::aDTO)
-                .collect(Collectors.toList());
+                .stream().map(this::aDTO).collect(Collectors.toList());
     }
 
-    // Arma el DTO y calcula los días: hasta hoy si sigue activo, hasta la devolución si ya volvió
+    private Usuario buscarUsuario(String correo) {
+        return usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario no encontrado con correo: " + correo));
+    }
+
+    private Estudiante buscarEstudiante(String correo) {
+        return estudianteRepository.findByUsuarioCorreo(correo)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No hay un estudiante asociado al usuario: " + correo));
+    }
+
     private PrestamoDTO aDTO(Prestamo prestamo) {
         PrestamoDTO dto = modelMapper.map(prestamo, PrestamoDTO.class);
-        LocalDate fin = prestamo.getFechadevolucionreal() != null
-                ? prestamo.getFechadevolucionreal()
-                : LocalDate.now();
-        dto.setDiasenprestamo(ChronoUnit.DAYS.between(prestamo.getFechaprestamo(), fin));
+        if (prestamo.getFechaprestamo() != null) {
+            LocalDate fin = prestamo.getFechadevolucionreal() != null
+                    ? prestamo.getFechadevolucionreal()
+                    : LocalDate.now();
+            dto.setDiasenprestamo(ChronoUnit.DAYS.between(prestamo.getFechaprestamo(), fin));
+        }
         return dto;
     }
 }
-

@@ -12,11 +12,6 @@ import java.time.LocalTime;
 @Getter
 @Setter
 public class ActualizarReservaRequest {
-    // Temporal: quien realiza la modificación. Cuando exista el login (HU07)
-    // se quita de aquí y se toma del usuario autenticado.
-    @NotNull(message = "El usuario que modifica es obligatorio")
-    private Long idusuario;
-
     @NotNull(message = "El videobeam es obligatorio")
     private Long idvideobeam;
 

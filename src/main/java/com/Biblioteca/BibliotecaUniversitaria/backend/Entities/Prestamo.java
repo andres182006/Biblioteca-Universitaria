@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -26,29 +27,34 @@ public class Prestamo {
     @JoinColumn(name = "idlibro", nullable = false)
     private Libro libro;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "idusuario", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "idusuario")
     private Usuario usuariobibliotecario;
 
-    @Column(name = "fechaprestamo", nullable = false)
+    @Column(name = "fechasolicitud", nullable = false, updatable = false)
+    private LocalDateTime fechasolicitud;
+
+    @Column(name = "fechaprestamo")
     private LocalDate fechaprestamo;
+
+    @Column(name = "motivorechazo", length = 200)
+    private String motivorechazo;
 
     @Column(name = "fechadevolucionesperada")
     private LocalDate fechadevolucionesperada;
 
-
     @Column(name = "fechadevolucionreal")
     private LocalDate fechadevolucionreal;
 
-    public enum EstadoPrestamo {activo, devuelto}
+    public enum EstadoPrestamo {solicitado, activo, devuelto, rechazado, cancelado}
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
-    private EstadoPrestamo estado = EstadoPrestamo.activo;
+    private EstadoPrestamo estado = EstadoPrestamo.solicitado;
 
     @PrePersist
     public void prePersist() {
-        if (this.fechaprestamo == null) {
-            this.fechaprestamo = LocalDate.now();
+        if (this.fechasolicitud == null) {
+            this.fechasolicitud = LocalDateTime.now();
         }
     }
 }
