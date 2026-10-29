@@ -1,0 +1,6 @@
+name = "biblioteca-universitaria"
+compatibility_date = "2026-10-29"
+
+[assets]
+directory = "./dist/app/browser"
+not_found_handling = "single-page-application"
