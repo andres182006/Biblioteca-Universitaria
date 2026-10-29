@@ -1,0 +1,281 @@
+<!-- Notificaciones -->
+<div class="fixed top-20 right-6 z-[70] flex flex-col gap-space-sm pointer-events-none" aria-live="polite">
+  @for (t of toasts(); track t.id) {
+    <div class="pointer-events-auto flex items-center gap-space-sm px-space-md py-3 rounded-xl shadow-lg max-w-md" [class]="toastClases(t)">
+      <span class="material-symbols-outlined text-[20px]" [class]="t.tipo === 'error' ? 'text-error' : 'text-secondary-fixed'">{{ t.tipo === 'error' ? 'error' : 'check_circle' }}</span>
+      <span class="font-title-sm text-title-sm">{{ t.mensaje }}</span>
+      <button type="button" (click)="cerrarToast(t.id)" aria-label="Cerrar aviso" class="ml-2 hover:opacity-70 transition-opacity">
+        <span class="material-symbols-outlined text-[16px]">close</span>
+      </button>
+    </div>
+  }
+</div>
+
+<main class="w-full bg-surface px-gutter min-h-screen pt-24 pb-12">
+  <div class="flex flex-col w-full">
+
+    <!-- Título y acción principal -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md pb-space-lg">
+      <div>
+        <div class="inline-flex items-center gap-space-xs px-space-sm py-0.5 rounded-full bg-surface-container-high text-secondary font-label-sm text-label-sm uppercase tracking-wider mb-space-xs">
+          <span class="material-symbols-outlined text-[14px]">local_library</span> Catálogo general CTEV
+        </div>
+        <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Libros</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant">Administra el catálogo de la biblioteca y sus copias.</p>
+      </div>
+      <button type="button" (click)="abrirDrawer()"
+        class="inline-flex items-center justify-center gap-space-xs px-space-lg py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary transition-all shadow-sm font-title-sm text-title-sm">
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        <span>Nuevo libro</span>
+      </button>
+    </div>
+
+    <!-- Métricas -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md mb-space-lg">
+      <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-[0_1px_3px_rgba(11,37,69,0.04)] ring-1 ring-outline-variant/30 relative overflow-hidden flex items-center justify-between">
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+        <div class="pl-space-xs">
+          <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Títulos</p>
+          <p class="font-display-lg text-display-lg text-primary tracking-tight mt-1">{{ totalTitulos() }}</p>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Catálogo activo</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary-container"><span class="material-symbols-outlined text-[26px]">menu_book</span></div>
+      </div>
+      <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-[0_1px_3px_rgba(11,37,69,0.04)] ring-1 ring-outline-variant/30 relative overflow-hidden flex items-center justify-between">
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
+        <div class="pl-space-xs">
+          <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Copias totales</p>
+          <p class="font-display-lg text-display-lg text-primary tracking-tight mt-1">{{ totalCopias() }}</p>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">En inventario físico</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[26px]">auto_stories</span></div>
+      </div>
+      <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-[0_1px_3px_rgba(11,37,69,0.04)] ring-1 ring-outline-variant/30 relative overflow-hidden flex items-center justify-between">
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary-fixed-dim"></div>
+        <div class="pl-space-xs">
+          <p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Copias disponibles</p>
+          <p class="font-display-lg text-display-lg text-primary tracking-tight mt-1">{{ copiasDisponibles() }}</p>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Listas para préstamo</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-on-tertiary-container"><span class="material-symbols-outlined text-[26px]">check_circle</span></div>
+      </div>
+    </div>
+
+    <!-- Búsqueda y filtro -->
+    <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-[0_1px_3px_rgba(11,37,69,0.04)] mb-space-md flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-md ring-1 ring-outline-variant/30">
+      <div class="relative flex-1">
+        <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[20px] text-outline">search</span>
+        <input type="text" [value]="busqueda()" (input)="busqueda.set($any($event.target).value)"
+          placeholder="Buscar por título, autor o ISBN..."
+          class="w-full h-11 pl-11 pr-space-md rounded-lg bg-surface text-on-surface placeholder:text-outline text-body-md font-body-md border-0 outline-none focus:ring-2 focus:ring-primary-container transition-all">
+      </div>
+      <div class="flex items-center gap-space-sm">
+        <div class="relative min-w-[240px] flex-1 md:flex-none">
+          <select aria-label="Filtrar por categoría" (change)="categoria.set($any($event.target).value)"
+            class="w-full h-11 pl-space-md pr-10 rounded-lg bg-surface text-on-surface text-body-md font-body-md border-0 outline-none appearance-none focus:ring-2 focus:ring-primary-container cursor-pointer transition-all">
+            <option value="ALL" [selected]="categoria() === 'ALL'">Todas las categorías</option>
+            @for (c of categorias(); track c) {
+              <option [value]="c" [selected]="categoria() === c">{{ c }}</option>
+            }
+          </select>
+          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-outline pointer-events-none">expand_more</span>
+        </div>
+        <button type="button" (click)="resetFiltros()" title="Restablecer filtros" aria-label="Restablecer filtros"
+          class="h-11 w-11 flex items-center justify-center rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant transition-colors">
+          <span class="material-symbols-outlined text-[20px]">refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-surface-container-lowest rounded-xl shadow-[0_1px_3px_rgba(11,37,69,0.05)] ring-1 ring-outline-variant/30 overflow-hidden">
+
+      @if (cargando()) {
+        <div class="p-space-lg flex flex-col gap-space-md animate-pulse" aria-busy="true">
+          <div class="h-8 bg-surface-container rounded-lg w-full mb-space-sm"></div>
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="h-14 bg-surface-container-low rounded-lg w-full"></div>
+          }
+        </div>
+      } @else if (errorCarga()) {
+        <div class="py-16 px-space-lg flex flex-col items-center justify-center text-center">
+          <div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-error mb-space-md"><span class="material-symbols-outlined text-[32px]">cloud_off</span></div>
+          <h3 class="font-headline-sm text-headline-sm text-error mb-1">No se pudo cargar el catálogo</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-sm mb-space-lg">{{ errorCarga() }}</p>
+          <button type="button" (click)="cargar()" class="inline-flex items-center gap-space-xs px-space-lg py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary transition-all font-title-sm text-title-sm">Reintentar</button>
+        </div>
+      } @else if (visibles().length === 0) {
+        <div class="py-16 px-space-lg flex flex-col items-center justify-center text-center">
+          <div class="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center text-outline mb-space-md">
+            <span class="material-symbols-outlined text-[32px]">{{ hayFiltros() ? 'search_off' : 'menu_book' }}</span>
+          </div>
+          @if (hayFiltros()) {
+            <h3 class="font-headline-sm text-headline-sm text-primary mb-1">No se encontraron libros</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Intenta ajustar los términos de búsqueda o cambiar el filtro de categoría.</p>
+          } @else {
+            <h3 class="font-headline-sm text-headline-sm text-primary mb-1">No hay libros registrados</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant max-w-sm mb-space-lg">Agrega un nuevo título para comenzar a gestionar el catálogo de la biblioteca universitaria.</p>
+            <button type="button" (click)="abrirDrawer()" class="inline-flex items-center gap-space-xs px-space-lg py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-secondary transition-all font-title-sm text-title-sm">
+              <span class="material-symbols-outlined text-[20px]">add</span><span>Nuevo libro</span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                <th class="py-3.5 px-space-lg font-semibold">Título</th>
+                <th class="py-3.5 px-space-md font-semibold">Autor</th>
+                <th class="py-3.5 px-space-md font-semibold">ISBN</th>
+                <th class="py-3.5 px-space-md font-semibold">Categoría</th>
+                <th class="py-3.5 px-space-md font-semibold">Disponibilidad</th>
+                <th class="py-3.5 px-space-lg text-right font-semibold">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="font-body-md text-body-md">
+              @for (l of visibles(); track l.id; let impar = $odd) {
+                <tr class="hover:bg-surface-container-low transition-colors" [class]="impar ? 'bg-surface/60' : 'bg-surface-container-lowest'">
+                  <td class="py-3.5 px-space-lg font-title-sm text-title-sm text-primary max-w-xs truncate" [title]="l.titulo">{{ l.titulo }}</td>
+                  <td class="py-3.5 px-space-md text-on-surface-variant max-w-xs truncate" [title]="l.autor">{{ l.autor }}</td>
+                  <td class="py-3.5 px-space-md font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{{ l.isbn || '—' }}</td>
+                  <td class="py-3.5 px-space-md whitespace-nowrap">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-secondary">{{ l.categoria || 'General' }}</span>
+                  </td>
+                  <td class="py-3.5 px-space-md whitespace-nowrap">
+                    <div class="flex items-center gap-2">
+                      <span class="font-title-sm text-title-sm" [class]="l.cantidaddisponible === 0 ? 'text-error font-bold' : 'text-on-surface'">{{ l.cantidaddisponible }} / {{ l.cantidadtotal }}</span>
+                      @if (l.cantidaddisponible === 0) {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">
+                          <span class="w-1.5 h-1.5 rounded-full bg-error"></span> Agotado
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-space-lg whitespace-nowrap text-right">
+                    <div class="inline-flex items-center gap-1.5">
+                      <button type="button" (click)="abrirDrawer(l)" title="Editar este libro"
+                        class="px-2.5 py-1 rounded-sm bg-surface-container-low hover:bg-surface-container text-secondary hover:text-primary font-label-md text-label-md transition-colors">Editar</button>
+                      <button type="button" (click)="aEliminar.set(l)" title="Eliminar este libro"
+                        class="px-2.5 py-1 rounded-sm bg-surface-container-low hover:bg-error-container text-outline hover:text-on-error-container font-label-md text-label-md transition-colors">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="px-space-lg py-3.5 bg-surface-container-lowest border-t border-outline-variant/20">
+          <span class="font-body-sm text-body-sm text-on-surface-variant">Mostrando {{ visibles().length }} de {{ libros().length }} títulos</span>
+        </div>
+      }
+    </div>
+  </div>
+</main>
+
+<!-- Panel lateral: crear / editar -->
+<div class="fixed inset-0 bg-primary/40 backdrop-blur-sm z-[60] transition-opacity duration-300"
+  [class]="drawerAbierto() ? 'opacity-100' : 'opacity-0 pointer-events-none'" (click)="cerrarDrawer()"></div>
+
+<aside class="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-surface-container-lowest shadow-2xl z-[65] flex flex-col justify-between transition-transform duration-300 ease-out"
+  [class]="drawerAbierto() ? 'translate-x-0' : 'translate-x-full'"
+  [attr.inert]="drawerAbierto() ? null : ''" role="dialog" aria-modal="true" aria-label="Formulario de libro">
+
+  <div class="p-space-lg bg-surface-container-low flex items-center justify-between border-b border-outline-variant/30">
+    <div>
+      <h2 class="font-headline-sm text-headline-sm text-primary tracking-tight">{{ editando() ? 'Editar libro' : 'Nuevo libro' }}</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant">Completa los datos del acervo bibliográfico.</p>
+    </div>
+    <button type="button" (click)="cerrarDrawer()" aria-label="Cerrar panel" class="w-9 h-9 rounded-lg hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
+      <span class="material-symbols-outlined text-[22px]">close</span>
+    </button>
+  </div>
+
+  <form id="formLibro" class="p-space-lg flex-1 overflow-y-auto flex flex-col gap-space-md" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+
+    <div>
+      <label class="block font-title-sm text-title-sm text-on-surface mb-1.5" for="titulo">Título del libro <span class="text-error">*</span></label>
+      <input id="titulo" type="text" formControlName="titulo" maxlength="200" placeholder="p. ej. Clean Architecture"
+        class="w-full h-10 px-3.5 rounded-lg bg-surface text-on-surface text-body-md font-body-md border-0 outline-none ring-1 focus:ring-2 focus:ring-primary-container transition-all"
+        [class]="invalido('titulo') ? 'ring-error' : 'ring-outline-variant'">
+      @if (invalido('titulo')) { <span class="font-body-sm text-body-sm text-error mt-1 block">El título es obligatorio</span> }
+    </div>
+
+    <div>
+      <label class="block font-title-sm text-title-sm text-on-surface mb-1.5" for="autor">Autor(es) <span class="text-error">*</span></label>
+      <input id="autor" type="text" formControlName="autor" maxlength="150" placeholder="p. ej. Robert C. Martin"
+        class="w-full h-10 px-3.5 rounded-lg bg-surface text-on-surface text-body-md font-body-md border-0 outline-none ring-1 focus:ring-2 focus:ring-primary-container transition-all"
+        [class]="invalido('autor') ? 'ring-error' : 'ring-outline-variant'">
+      @if (invalido('autor')) { <span class="font-body-sm text-body-sm text-error mt-1 block">El autor es obligatorio</span> }
+    </div>
+
+    <div>
+      <label class="block font-title-sm text-title-sm text-on-surface mb-1.5" for="isbn">ISBN</label>
+      <input id="isbn" type="text" formControlName="isbn" maxlength="20" placeholder="978-XXXXXXXXXX"
+        class="w-full h-10 px-3.5 rounded-lg bg-surface text-on-surface text-body-md font-body-md border-0 outline-none ring-1 ring-outline-variant focus:ring-2 focus:ring-primary-container transition-all">
+    </div>
+
+    <div>
+      <label class="block font-title-sm text-title-sm text-on-surface mb-1.5" for="categoria">Categoría</label>
+      <input id="categoria" type="text" formControlName="categoria" maxlength="80" placeholder="Ej. Ingeniería de Software, Bases de Datos..."
+        class="w-full h-10 px-3.5 rounded-lg bg-surface text-on-surface text-body-md font-body-md border-0 outline-none ring-1 ring-outline-variant focus:ring-2 focus:ring-primary-container transition-all">
+    </div>
+
+    <div>
+      <label class="block font-title-sm text-title-sm text-on-surface mb-1.5" for="cantidadtotal">Cantidad total de copias <span class="text-error">*</span></label>
+      <input id="cantidadtotal" type="number" formControlName="cantidadtotal" [min]="minCopias()" step="1"
+        class="w-full h-10 px-3.5 rounded-lg bg-surface text-on-surface text-body-md font-body-md border-0 outline-none ring-1 focus:ring-2 focus:ring-primary-container transition-all"
+        [class]="invalido('cantidadtotal') ? 'ring-error' : 'ring-outline-variant'">
+      @if (invalido('cantidadtotal')) {
+        <span class="font-body-sm text-body-sm text-error mt-1 block">Debe ser un número entero de {{ minCopias() }} o más</span>
+      }
+      <div class="mt-2.5 p-space-sm rounded-lg bg-surface-container-low flex items-start gap-2 text-on-surface-variant font-body-sm text-body-sm">
+        <span class="material-symbols-outlined text-[18px] text-secondary">info</span>
+        @if (editando(); as e) {
+          <span>El total no puede ser menor que las copias prestadas ({{ prestadas(e) }}).</span>
+        } @else {
+          <span>Las copias disponibles inician igual al total.</span>
+        }
+      </div>
+    </div>
+  </form>
+
+  <div class="p-space-lg bg-surface-container-lowest border-t border-outline-variant/30 flex items-center justify-end gap-space-sm">
+    <button type="button" (click)="cerrarDrawer()" class="px-space-lg py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-secondary font-title-sm text-title-sm transition-colors">Cancelar</button>
+    <button type="submit" form="formLibro" [disabled]="guardando()"
+      class="px-space-lg py-2.5 rounded-lg bg-primary-container hover:bg-secondary text-on-primary font-title-sm text-title-sm transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+      {{ guardando() ? 'Guardando…' : (editando() ? 'Actualizar libro' : 'Guardar libro') }}
+    </button>
+  </div>
+</aside>
+
+<!-- Modal: confirmar eliminación -->
+@if (aEliminar(); as l) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-primary/45 backdrop-blur-sm" (click)="aEliminar.set(null)"></div>
+    <div class="relative bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-2xl z-10">
+      <div class="w-12 h-12 rounded-xl bg-error-container text-on-error-container flex items-center justify-center mb-space-md"><span class="material-symbols-outlined text-[28px]">delete_forever</span></div>
+      <h3 class="font-headline-sm text-headline-sm text-primary mb-1">¿Eliminar título?</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant mb-space-lg">¿Estás seguro de que deseas eliminar «{{ l.titulo }}»? Esta acción no se puede deshacer.</p>
+      <div class="flex items-center justify-end gap-space-sm">
+        <button type="button" (click)="aEliminar.set(null)" class="px-space-lg py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm text-title-sm transition-colors">Cancelar</button>
+        <button type="button" (click)="confirmarEliminar()" [disabled]="eliminando()" class="px-space-lg py-2 rounded-lg bg-error text-on-error hover:opacity-90 font-title-sm text-title-sm transition-opacity shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">Eliminar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: eliminación bloqueada -->
+@if (errorBloqueo()) {
+  <div class="fixed inset-0 z-[85] flex items-center justify-center p-space-md" role="alertdialog" aria-modal="true">
+    <div class="fixed inset-0 bg-primary/45 backdrop-blur-sm" (click)="errorBloqueo.set('')"></div>
+    <div class="relative bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-2xl z-10">
+      <div class="w-12 h-12 rounded-xl bg-error-container text-on-error-container flex items-center justify-center mb-space-md"><span class="material-symbols-outlined text-[28px]">block</span></div>
+      <h3 class="font-headline-sm text-headline-sm text-primary mb-1">Acción denegada</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant mb-space-lg">{{ errorBloqueo() }}</p>
+      <div class="flex items-center justify-end">
+        <button type="button" (click)="errorBloqueo.set('')" class="px-space-lg py-2 rounded-lg bg-primary-container text-on-primary hover:bg-secondary font-title-sm text-title-sm transition-colors shadow-sm">Entendido</button>
+      </div>
+    </div>
+  </div>
+}

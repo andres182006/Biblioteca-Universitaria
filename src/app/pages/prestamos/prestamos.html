@@ -1,0 +1,274 @@
+<!-- Modal: confirmar aprobación -->
+@if (aAprobar(); as p) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md border border-outline-variant/30">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary shrink-0">
+          <span class="material-symbols-outlined text-[24px]">verified</span>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="font-title-md text-title-md text-primary font-bold">Aprobar solicitud de préstamo</h3>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            ¿Aprobar el préstamo de <strong class="text-on-surface font-semibold">{{ p.libro.titulo }}</strong>
+            a <strong class="text-on-surface font-semibold">{{ p.estudiante.nombrecompleto }}</strong>? Se descontará una copia.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-space-sm pt-space-xs border-t border-surface-container">
+        <button type="button" (click)="aAprobar.set(null)" class="h-9 px-space-md rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-title-sm text-title-sm transition-all">Cancelar</button>
+        <button type="button" (click)="confirmarAprobacion()" [disabled]="procesando()" class="h-9 px-space-lg rounded-lg bg-primary text-on-primary hover:bg-primary-container font-title-sm text-title-sm shadow-sm transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">Confirmar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: error al procesar -->
+@if (errorModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true">
+    <div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md border border-error/30">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center text-error shrink-0">
+          <span class="material-symbols-outlined text-[24px]">error</span>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="font-title-md text-title-md text-error font-bold">No se puede procesar</h3>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">{{ errorModal() }}</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end pt-space-xs border-t border-surface-container">
+        <button type="button" (click)="errorModal.set('')" class="h-9 px-space-md rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container font-title-sm text-title-sm transition-all">Entendido</button>
+      </div>
+    </div>
+  </div>
+}
+  <main class="relative w-full pt-24 bg-background px-margin py-margin min-h-screen">
+    <div class="flex flex-col w-full">
+
+      <section class="flex flex-col gap-1 pb-space-lg">
+        <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Solicitudes de préstamo</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">Revisa las solicitudes de los estudiantes y apruébalas o recházalas.</p>
+      </section>
+
+      <!-- Resumen -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-xl">
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-surface-container flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Solicitudes pendientes</span>
+            <span class="font-display-lg text-display-lg text-primary mt-1 font-bold">{{ pendientes().length }}</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[28px]">pending_actions</span></div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-surface-container flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Aprobadas hoy</span>
+            <span class="font-display-lg text-display-lg text-primary mt-1 font-bold">{{ aprobadasHoy() }}</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[28px]">task_alt</span></div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-surface-container flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Préstamos activos</span>
+            <span class="font-display-lg text-display-lg text-primary mt-1 font-bold">{{ prestamosActivos() }}</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[28px]">import_contacts</span></div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-surface-container flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Sin copias</span>
+            <span class="font-display-lg text-display-lg text-error mt-1 font-bold">{{ sinCopias() }}</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-error-container/40 flex items-center justify-center text-error"><span class="material-symbols-outlined text-[28px]">inventory_2</span></div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+
+        <!-- Columna izquierda: pestañas, búsqueda y lista -->
+        <section class="lg:col-span-8 flex flex-col gap-space-md">
+
+          <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-surface-container flex flex-col gap-space-md">
+            <div class="flex flex-wrap items-center gap-space-xs border-b border-surface-container pb-space-xs">
+              <button type="button" (click)="tab.set('pendientes')"
+                class="inline-flex items-center gap-space-xs px-space-md py-2 rounded-lg font-title-sm text-title-sm transition-all"
+                [class]="tab() === 'pendientes' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-low'">
+                <span>Pendientes</span>
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-bold text-label-sm">{{ pendientes().length }}</span>
+              </button>
+              <button type="button" (click)="tab.set('aprobadas')"
+                class="inline-flex items-center gap-space-xs px-space-md py-2 rounded-lg font-title-sm text-title-sm transition-all"
+                [class]="tab() === 'aprobadas' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-low'">
+                <span>Aprobadas</span>
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface text-label-sm">{{ aprobadas().length }}</span>
+              </button>
+              <button type="button" (click)="tab.set('rechazadas')"
+                class="inline-flex items-center gap-space-xs px-space-md py-2 rounded-lg font-title-sm text-title-sm transition-all"
+                [class]="tab() === 'rechazadas' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-low'">
+                <span>Rechazadas</span>
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface text-label-sm">{{ rechazadas().length }}</span>
+              </button>
+            </div>
+
+            <div class="relative w-full">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+              <input type="text" [value]="busqueda()" (input)="busqueda.set($any($event.target).value)"
+                placeholder="Buscar por estudiante, documento o libro..."
+                class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary transition-all border border-transparent focus:border-outline-variant">
+            </div>
+          </div>
+
+          @if (cargando()) {
+            <div class="flex flex-col gap-space-md" aria-busy="true">
+              @for (i of [1, 2]; track i) {
+                <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-surface-container animate-pulse flex flex-col gap-4">
+                  <div class="h-4 w-40 bg-surface-container rounded-sm"></div>
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-surface-container"></div>
+                    <div class="flex flex-col gap-2 flex-1">
+                      <div class="h-4 w-1/3 bg-surface-container rounded-sm"></div>
+                      <div class="h-3 w-1/4 bg-surface-container rounded-sm"></div>
+                    </div>
+                  </div>
+                  <div class="h-14 bg-surface-container-low rounded-sm"></div>
+                </div>
+              }
+            </div>
+          } @else if (errorCarga()) {
+            <div class="bg-surface-container-lowest rounded-xl p-12 shadow-sm border border-error/30 text-center flex flex-col items-center justify-center gap-3">
+              <div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-error"><span class="material-symbols-outlined text-[36px]">cloud_off</span></div>
+              <h3 class="font-headline-sm text-headline-sm text-error font-bold">No se pudieron cargar las solicitudes</h3>
+              <p class="font-body-md text-body-md text-on-surface-variant max-w-md">{{ errorCarga() }}</p>
+              <button type="button" (click)="cargar()" class="mt-2 h-9 px-space-lg rounded-lg bg-primary text-on-primary hover:bg-primary-container font-title-sm text-title-sm shadow-sm transition-all">Reintentar</button>
+            </div>
+          } @else if (visibles().length === 0) {
+            <div class="bg-surface-container-lowest rounded-xl p-12 shadow-sm border border-surface-container text-center flex flex-col items-center justify-center gap-3">
+              <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant"><span class="material-symbols-outlined text-[36px]">inbox</span></div>
+              <h3 class="font-headline-sm text-headline-sm text-primary font-bold">{{ vacioTitulo() }}</h3>
+              <p class="font-body-md text-body-md text-on-surface-variant max-w-md">{{ vacioTexto() }}</p>
+            </div>
+          } @else {
+            <div class="flex flex-col gap-space-md">
+              @for (p of visibles(); track p.id) {
+                <article class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-shadow flex flex-col gap-space-md"
+                  [class]="sinExistencias(p) ? 'border-l-4 border-l-error border-y border-r border-surface-container' : 'border border-surface-container'">
+
+                  <div class="flex items-center justify-between pb-space-xs border-b border-surface-container">
+                    <div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+                      <span class="material-symbols-outlined text-[16px]">schedule</span>
+                      <span>{{ p.fechasolicitud | date: 'dd/MM/yyyy - hh:mm a' }}</span>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm" [class]="badge(p).clases">{{ badge(p).texto }}</span>
+                  </div>
+
+                  <div class="flex items-center gap-space-md">
+                    <div class="w-11 h-11 rounded-full bg-surface-container-high text-primary flex items-center justify-center font-title-sm text-title-sm font-bold shrink-0">{{ iniciales(p.estudiante.nombrecompleto) }}</div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-title-sm text-title-sm text-primary font-bold">{{ p.estudiante.nombrecompleto }}</span>
+                      <span class="font-body-sm text-body-sm text-on-surface-variant">Documento {{ p.estudiante.documento }}</span>
+                    </div>
+                  </div>
+
+                  <div class="p-space-sm rounded-lg flex items-start gap-space-md"
+                    [class]="sinExistencias(p) ? 'bg-error-container/15 border border-error/20' : 'bg-surface-container-low'">
+                    <div class="w-12 h-14 rounded-sm bg-surface-container-lowest border flex items-center justify-center shrink-0 shadow-sm"
+                      [class]="sinExistencias(p) ? 'border-error/30 text-error' : 'border-surface-container text-primary'">
+                      <span class="material-symbols-outlined text-[24px]">book</span>
+                    </div>
+                    <div class="flex flex-col flex-1 min-w-0">
+                      <h2 class="font-title-sm text-title-sm font-bold" [class]="sinExistencias(p) ? 'text-error' : 'text-primary'">{{ p.libro.titulo }}</h2>
+                      <span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Autor: {{ p.libro.autor }}</span>
+                      <span class="font-label-sm text-label-sm text-outline mt-0.5">ISBN: {{ p.libro.isbn }}</span>
+
+                      @if (p.estado === 'solicitado') {
+                        <div class="mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                          @if (sinExistencias(p)) {
+                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold w-max">
+                              <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                              0 / {{ p.libro.cantidadtotal }} copias disponibles
+                            </span>
+                            <span class="font-label-sm text-label-sm text-error font-medium">No hay copias disponibles. No se puede aprobar.</span>
+                          } @else {
+                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-lowest text-secondary font-label-sm text-label-sm font-semibold border border-outline-variant/30 w-max">
+                              <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                              {{ p.libro.cantidaddisponible }} / {{ p.libro.cantidadtotal }} copias disponibles
+                            </span>
+                          }
+                        </div>
+                      }
+
+                      @if (p.estado === 'rechazado') {
+                        <div class="mt-2 p-2 rounded-sm bg-surface-container-lowest border border-outline-variant/30 text-body-sm text-error">
+                          <span class="font-semibold">Motivo:</span> {{ p.motivorechazo || 'No especificado por el bibliotecario.' }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  @if (p.estado === 'solicitado') {
+                    <div class="flex items-center justify-end gap-space-sm pt-space-xs">
+                      <button type="button" (click)="seleccionarRechazo(p)"
+                        class="inline-flex items-center gap-1.5 h-9 px-space-md rounded-lg bg-surface-container-low text-error hover:bg-error-container hover:text-on-error-container font-title-sm text-title-sm transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-[16px]">close</span><span>Rechazar</span>
+                      </button>
+                      <button type="button" (click)="aAprobar.set(p)" [disabled]="sinExistencias(p)"
+                        class="inline-flex items-center gap-1.5 h-9 px-space-lg rounded-lg bg-primary text-on-primary hover:bg-primary-container font-title-sm text-title-sm shadow-sm transition-all active:scale-95 disabled:bg-surface-container-high disabled:text-outline disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none">
+                        <span class="material-symbols-outlined text-[18px]">{{ sinExistencias(p) ? 'block' : 'check' }}</span><span>Aprobar</span>
+                      </button>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- Columna derecha: panel de rechazo -->
+        <aside class="lg:col-span-4 flex flex-col gap-space-md lg:sticky lg:top-24">
+          <div id="panel-rechazo" class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-surface-container flex flex-col gap-space-md">
+            <div class="flex items-center gap-space-xs pb-space-xs border-b border-surface-container">
+              <span class="material-symbols-outlined text-error text-[22px]">cancel</span>
+              <h3 class="font-title-md text-title-md text-primary font-bold">Rechazar solicitud</h3>
+            </div>
+
+            <div class="bg-surface-container-low p-space-sm rounded-lg flex flex-col gap-1 border border-surface-container">
+              <span class="font-label-sm text-label-sm text-outline font-semibold uppercase">Solicitud a rechazar</span>
+              @if (aRechazar(); as r) {
+                <span class="font-title-sm text-title-sm text-primary font-bold">{{ r.estudiante.nombrecompleto }}</span>
+                <span class="font-body-sm text-body-sm text-on-surface-variant truncate">{{ r.libro.titulo }}</span>
+              } @else {
+                <span class="font-body-sm text-body-sm text-on-surface-variant italic">Selecciona una solicitud para rechazar</span>
+              }
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center justify-between">
+                <label for="motivo" class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Motivo (opcional)</label>
+                <span class="font-label-sm text-label-sm text-outline">{{ motivo().length }} / 200</span>
+              </div>
+              <textarea id="motivo" rows="4" maxlength="200" [disabled]="!aRechazar()" [value]="motivo()"
+                (input)="motivo.set($any($event.target).value)"
+                placeholder="Escribe el motivo del rechazo para conocimiento del estudiante..."
+                class="w-full p-2.5 rounded-lg bg-surface-container-lowest text-on-surface border border-outline-variant focus:outline-none focus:border-primary font-body-sm text-body-sm resize-none disabled:bg-surface-container-low disabled:cursor-not-allowed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-space-sm pt-space-xs border-t border-surface-container">
+              <button type="button" (click)="cancelarRechazo()" [disabled]="!aRechazar()"
+                class="h-9 px-space-md rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-title-sm text-title-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed">Cancelar</button>
+              <button type="button" (click)="confirmarRechazo()" [disabled]="!aRechazar() || procesando()"
+                class="h-9 px-space-lg rounded-lg font-title-sm text-title-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                [class]="aRechazar() ? 'bg-error text-on-error hover:bg-error/90 shadow-sm active:scale-95' : 'bg-surface-container-high text-outline'">Confirmar rechazo</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+<!-- Notificaciones -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite">
+  @for (t of toasts(); track t.id) {
+    <div class="flex items-center gap-space-sm px-space-md py-3 rounded-lg shadow-xl font-body-sm text-body-sm pointer-events-auto max-w-md" [class]="toastClases(t)">
+      <span class="material-symbols-outlined text-[18px]">{{ t.tipo === 'ok' ? 'check_circle' : t.tipo === 'error' ? 'error' : 'info' }}</span>
+      <span class="flex-1">{{ t.mensaje }}</span>
+    </div>
+  }
+</div>
