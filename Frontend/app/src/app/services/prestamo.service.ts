@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface ApiResponse<T> {
   data: T;
@@ -36,7 +37,7 @@ export interface Prestamo {
 @Injectable({ providedIn: 'root' })
 export class PrestamoService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8080/api-biblioteca/Prestamo';
+  private base = `${environment.apiBaseUrl}/Prestamo`;
 
   historial(): Observable<ApiResponse<Prestamo[]>> {
     return this.http.get<ApiResponse<Prestamo[]>>(`${this.base}/historial`);

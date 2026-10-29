@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 export interface LoginData {
     token: string;
     tipo: string;
@@ -16,7 +17,7 @@ export interface apiResponse <T> {
 @Injectable({providedIn: 'root'})
 export class LoginService {
    private http = inject(HttpClient);
-   private apiUrl = 'http://localhost:8080/api-biblioteca/Auth/login';
+   private apiUrl = `${environment.apiBaseUrl}/Auth/login`;
 
    login(correo: string, password: string): Observable<any> {
     return this.http.post<any>(this.apiUrl, { correo, contrasena: password });

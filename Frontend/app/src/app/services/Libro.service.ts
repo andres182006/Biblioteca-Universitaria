@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiResponse } from './prestamo.service';
+import { environment } from '../../environments/environment';
 
 export interface Libro {
   id: number;
@@ -24,7 +25,7 @@ export interface LibroRequest {
 @Injectable({ providedIn: 'root' })
 export class LibroService {
   private http = inject(HttpClient);
-  private base = 'http://localhost:8080/api-biblioteca/Libro';
+  private base = `${environment.apiBaseUrl}/Libro`;
 
   listar(): Observable<ApiResponse<Libro[]>> {
     return this.http.get<ApiResponse<Libro[]>>(this.base);

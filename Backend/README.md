@@ -1,40 +1,41 @@
-# Biblioteca-Universitaria
+# Backend
 
-## Conectar el backend a Supabase
+Spring Boot API backed by Supabase PostgreSQL.
 
-El backend se conecta a PostgreSQL mediante JDBC. Para usar Supabase:
+## Local setup
 
-1. En Supabase, abre **SQL Editor** y crea el esquema que utiliza la aplicación:
+1. In Supabase SQL Editor, create the application schema:
 
    ```sql
    CREATE SCHEMA IF NOT EXISTS biblioteca;
    ```
 
-   La configuración JPA existente crea/actualiza las tablas en ese esquema.
-2. Desde la carpeta `Backend`, copia `.env.example` como `.env` y completa los
-   datos de **Shared pooler** de Supabase:
+2. Copy `.env.example` to `.env` in this directory and set `DB_PASSWORD`,
+   `ADMIN_PASSWORD`, and `JWT_SECRET` to fresh values. Do not commit `.env`.
+   Generate a Base64-encoded 32-byte JWT secret in PowerShell with:
 
    ```powershell
-   Copy-Item .env.example .env
+   [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
    ```
 
-   En `.env`, configura `DB_URL` con el formato
-   `jdbc:postgresql://<host-del-pooler>:5432/postgres?sslmode=require`,
-   `DB_USERNAME` con el usuario del pooler y `DB_PASSWORD` con la contraseña
-   de la base de datos. No incluyas la contraseña en la URL; al ir en una
-   variable separada no necesita codificación porcentual. Completa también
-   `ADMIN_PASSWORD` y `JWT_SECRET`.
-3. Ejecuta el backend desde `Backend`:
+3. Run from `Backend`:
 
    ```powershell
    .\mvnw.cmd spring-boot:run
    ```
 
-`.env` está excluido de Git; no compartas ni subas ese archivo. Si no existe,
-la URL y el usuario conservan los valores locales anteriores, y la contraseña
-se sigue leyendo de `DB_PASSWORD`.
+The Supabase connection uses the shared pooler over TLS. Database credentials,
+admin password, JWT secret, and allowed CORS origins are supplied through
+environment variables.
 
-La contraseña de base de datos se compartió en el mensaje de configuración.
-Rótala desde Supabase antes de conectar y guarda únicamente la nueva en `.env`.
-Puedes administrar la base de datos desde Supabase Studio; pgAdmin ya no es
-necesario para que el backend funcione.
+## Deploy on Render
+
+The repository-root `render.yaml` and this directory's `Dockerfile` describe
+the Spring Boot service. In Render, create a Blueprint from the repository and
+provide the prompted `DB_PASSWORD`, `ADMIN_PASSWORD`, and `JWT_SECRET` values.
+Rotate the database password that was previously shared before using it.
+
+The backend creates/updates application tables in the `biblioteca` schema.
+Create that schema in Supabase before the first deployment. The Angular
+frontend is hosted separately and its production API URL must match the
+Render service URL.
