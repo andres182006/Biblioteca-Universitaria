@@ -1,0 +1,116 @@
+<header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(11,37,69,0.04)]">
+  <div class="h-20 w-full max-w-7xl mx-auto px-6 lg:px-12 flex items-center">
+    <div class="flex items-center gap-space-md">
+      <div class="w-11 h-11 rounded-lg bg-primary-container flex items-center justify-center text-tertiary-fixed shadow-[0_2px_4px_rgba(11,37,69,0.12)]">
+        <span class="material-symbols-outlined text-[24px]">account_balance</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-headline-lg text-title-md text-primary tracking-tight font-bold">Universidad de Cartagena</span>
+        <div class="flex items-center gap-space-xs">
+          <span class="font-label-md text-label-md text-on-tertiary-container font-semibold tracking-wide">CTEV</span>
+          <span class="text-outline-variant text-body-sm">•</span>
+          <span class="font-body-sm text-body-sm text-on-surface-variant">Centro Tecnológico de Educación Virtual</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="w-full pt-20 bg-surface min-h-[calc(100vh-80px)] flex flex-col justify-center">
+  <div class="flex flex-col w-full py-space-xl px-margin-sm lg:px-margin-lg max-w-7xl mx-auto">
+    <div class="w-full bg-surface-container-lowest rounded-xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[700px] relative">
+
+      <div class="absolute -right-32 -bottom-32 w-96 h-96 rounded-full bg-surface-container opacity-40 blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-32 -top-32 w-96 h-96 rounded-full bg-tertiary-fixed opacity-20 blur-3xl pointer-events-none"></div>
+
+      <!-- Columna izquierda -->
+      <section class="lg:col-span-5 bg-primary-container text-on-primary p-space-lg lg:p-space-xl flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-b from-primary via-transparent to-primary-container"></div>
+        <div class="relative z-10 flex flex-col justify-center my-auto gap-space-lg">
+          <div class="w-14 h-14 rounded-xl bg-surface-container-lowest/15 backdrop-blur-md flex items-center justify-center text-tertiary-fixed mb-space-xs shadow-md">
+            <span class="material-symbols-outlined text-[32px]">account_balance</span>
+          </div>
+          <h1 class="font-headline-lg text-headline-lg tracking-tight text-on-primary font-bold">Sistema de Biblioteca CTEV – UdeC</h1>
+          <p class="font-body-md text-body-md text-on-primary-container leading-relaxed">
+            Accede con tu cuenta para gestionar préstamos de libros y reservas de equipos audiovisuales.
+          </p>
+        </div>
+      </section>
+
+      <!-- Columna derecha -->
+      <section class="lg:col-span-7 p-space-lg lg:p-space-xl flex flex-col justify-between bg-surface-container-lowest relative">
+        <div class="flex flex-col gap-space-md max-w-xl mx-auto w-full my-auto">
+
+          <div class="flex flex-col gap-1">
+            <h2 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">Iniciar Sesión</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Ingresa con tus credenciales de la Universidad de Cartagena</p>
+          </div>
+
+          @if (errorGlobal()) {
+            <div class="flex items-center gap-2 p-3 rounded-lg bg-error-container text-error text-body-sm font-medium" role="alert">
+              <span class="material-symbols-outlined text-[18px]">error</span>
+              <span>{{ errorGlobal() }}</span>
+            </div>
+          }
+
+          <form class="flex flex-col gap-space-md" [formGroup]="form" (ngSubmit)="entrar()" novalidate>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="font-label-md text-label-md font-semibold text-on-surface" for="correo">Correo electrónico</label>
+              <div class="relative flex items-center">
+                <div class="absolute left-3 text-secondary flex items-center pointer-events-none">
+                  <span class="material-symbols-outlined text-[20px]">mail</span>
+                </div>
+                <input id="correo" type="text" formControlName="correo" placeholder="nombre@correo.com" autocomplete="username"
+                  class="w-full h-11 pl-10 pr-3 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                  [class.ring-2]="invalido('correo')" [class.ring-error]="invalido('correo')">
+              </div>
+              @if (invalido('correo')) {
+                <span class="font-body-sm text-body-sm text-error">{{ textoError('correo') }}</span>
+              }
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="font-label-md text-label-md font-semibold text-on-surface" for="clave">Contraseña</label>
+              <div class="relative flex items-center">
+                <div class="absolute left-3 text-secondary flex items-center pointer-events-none">
+                  <span class="material-symbols-outlined text-[20px]">lock</span>
+                </div>
+                <input id="clave" [type]="verClave() ? 'text' : 'password'" formControlName="clave" placeholder="••••••••" autocomplete="current-password"
+                  class="w-full h-11 pl-10 pr-10 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                  [class.ring-2]="invalido('clave')" [class.ring-error]="invalido('clave')">
+                <button type="button" aria-label="Mostrar u ocultar contraseña" (click)="verClave.set(!verClave())"
+                  class="absolute right-3 text-outline hover:text-on-surface flex items-center justify-center p-1">
+                  <span class="material-symbols-outlined text-[20px]">{{ verClave() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+              @if (invalido('clave')) {
+                <span class="font-body-sm text-body-sm text-error">{{ textoError('clave') }}</span>
+              }
+            </div>
+
+            <button type="submit" [disabled]="cargando()"
+              class="w-full h-11 rounded-lg bg-primary-container text-on-primary font-title-sm text-title-sm font-semibold hover:bg-primary transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+              @if (cargando()) {
+                <span class="inline-block animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
+                <span>Ingresando…</span>
+              } @else {
+                <span>Ingresar</span>
+              }
+            </button>
+
+            <p class="text-center font-body-sm text-body-sm text-on-surface-variant pt-space-xs">
+              ¿No tienes cuenta? Solicítala en la biblioteca.
+            </p>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="w-full bg-surface-container-lowest shadow-[0_-1px_6px_rgba(11,37,69,0.03)] py-6">
+  <div class="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-center text-center">
+    <p class="font-body-sm text-body-sm text-on-surface-variant">© 2026 CTEV · Universidad de Cartagena</p>
+  </div>
+</footer>
