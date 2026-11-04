@@ -25,9 +25,9 @@ export class LayoutBibliotecario {
     { texto: 'Solicitudes de préstamo', icono: 'rule_folder', ruta: '/prestamos' },
     { texto: 'Préstamos y devoluciones', icono: 'assignment_turned_in', ruta: '/devoluciones' },
     { texto: 'Libros', icono: 'menu_book', ruta: '/libros' },
-    { texto: 'Usuarios', icono: 'group', ruta: null },
-    { texto: 'Videobeams', icono: 'videocam', ruta: null },
-    { texto: 'Reservas', icono: 'bookmark_border', ruta: null },
+    { texto: 'Usuarios', icono: 'group', ruta: '/usuarios' },
+    { texto: 'Videobeams', icono: 'videocam', ruta: '/videobeams' },
+    { texto: 'Reservas', icono: 'bookmark_border', ruta: '/reservas' },
   ];
 
   cerrarSesion() {

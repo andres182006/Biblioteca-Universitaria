@@ -1,1 +1,235 @@
-<p>videobeams works!</p>
+<!-- Notificaciones -->
+<div class="fixed bottom-6 right-6 z-[70] flex flex-col gap-2 pointer-events-none" aria-live="polite">
+  @for (t of toasts(); track t.id) {
+    <div class="px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 font-label-md text-label-md pointer-events-auto" [class]="toastClases(t)">
+      <span class="material-symbols-outlined text-[20px]" [class]="t.tipo === 'ok' ? 'text-[#10B981]' : ''">{{ t.tipo === 'ok' ? 'check_circle' : 'error' }}</span>
+      <span>{{ t.mensaje }}</span>
+      <button type="button" (click)="cerrarToast(t.id)" aria-label="Cerrar aviso" class="ml-1 hover:opacity-70"><span class="material-symbols-outlined text-[16px]">close</span></button>
+    </div>
+  }
+</div>
+
+<main class="w-full bg-surface min-h-screen px-gutter pt-24 pb-12">
+  <div class="max-w-7xl mx-auto flex flex-col w-full gap-space-lg">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+      <div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Videobeams</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-1">Administra el inventario de equipos.</p>
+      </div>
+      <button type="button" (click)="abrirForm()"
+        class="h-10 px-space-md rounded-sm bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm flex items-center justify-center shadow-sm active:scale-95 transition-all">
+        Registrar videobeam
+      </button>
+    </div>
+
+    <!-- Métricas -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm border-t-4 border-[#10B981] flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="font-display-lg text-display-lg text-on-surface font-bold">{{ disponibles() }}</span>
+          <span class="font-body-md text-body-md text-on-surface-variant font-medium mt-0.5">Disponibles</span>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-[#ECFDF5] flex items-center justify-center text-[#047857]"><span class="material-symbols-outlined text-[22px]">check_circle</span></div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm border-t-4 border-secondary flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="font-display-lg text-display-lg text-on-surface font-bold">{{ reservados() }}</span>
+          <span class="font-body-md text-body-md text-on-surface-variant font-medium mt-0.5">Reservados</span>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[22px]">calendar_month</span></div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm border-t-4 border-on-tertiary-container flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="font-display-lg text-display-lg text-on-surface font-bold">{{ enMantenimiento() }}</span>
+          <span class="font-body-md text-body-md text-on-surface-variant font-medium mt-0.5">Mantenimiento</span>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-container"><span class="material-symbols-outlined text-[22px]">build</span></div>
+      </div>
+    </section>
+
+    <!-- Búsqueda y filtros -->
+    <section class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col md:flex-row gap-space-md items-center justify-between">
+      <div class="relative flex-1 w-full">
+        <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+        <input type="text" [value]="busqueda()" (input)="busqueda.set($any($event.target).value)"
+          placeholder="Buscar por código o descripción..."
+          class="w-full h-10 pl-9 pr-3 bg-surface-container-low rounded-sm text-on-surface placeholder:text-outline font-body-sm text-body-sm outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container transition-all">
+      </div>
+      <div class="flex items-center gap-space-sm w-full md:w-auto shrink-0">
+        <div class="flex items-center bg-surface-container-low rounded-sm h-10 px-3 gap-2 w-full md:w-64">
+          <span class="material-symbols-outlined text-outline text-[18px]">filter_list</span>
+          <select aria-label="Filtrar por estado" (change)="filtroEstado.set($any($event.target).value)"
+            class="bg-transparent text-on-surface font-body-sm text-body-sm outline-none w-full cursor-pointer">
+            <option value="todos" [selected]="filtroEstado() === 'todos'">Todos</option>
+            @for (e of estados; track e.valor) {
+              <option [value]="e.valor" [selected]="filtroEstado() === e.valor">{{ e.texto }}</option>
+            }
+          </select>
+        </div>
+        <button type="button" (click)="limpiarFiltros()" title="Restablecer filtros"
+          class="h-10 px-3 rounded-sm text-on-surface-variant hover:bg-surface-container text-label-sm font-label-sm flex items-center gap-1 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">refresh</span><span class="hidden sm:inline">Limpiar</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Contenido -->
+    @if (cargando()) {
+      <div class="bg-surface-container-lowest rounded-lg p-space-lg shadow-sm animate-pulse flex flex-col gap-4" aria-busy="true">
+        <div class="h-6 bg-surface-container-high rounded-sm w-1/3"></div>
+        @for (i of [1, 2, 3, 4]; track i) { <div class="h-10 bg-surface-container-low rounded-sm w-full"></div> }
+      </div>
+    } @else if (errorCarga()) {
+      <div class="bg-surface-container-lowest rounded-lg p-12 text-center shadow-sm flex flex-col items-center justify-center border border-error/30">
+        <div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-error mb-space-md"><span class="material-symbols-outlined text-[32px]">cloud_off</span></div>
+        <h3 class="font-headline-sm text-headline-sm text-error font-semibold">No se pudo cargar el inventario</h3>
+        <p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">{{ errorCarga() }}</p>
+        <button type="button" (click)="cargar()" class="mt-space-md h-9 px-space-md bg-primary-container text-on-primary rounded-sm font-label-md text-label-md hover:bg-secondary transition-colors">Reintentar</button>
+      </div>
+    } @else if (visibles().length === 0) {
+      <div class="bg-surface-container-lowest rounded-lg p-12 text-center shadow-sm flex flex-col items-center justify-center border border-surface-container-high">
+        <div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant mb-space-md">
+          <span class="material-symbols-outlined text-[32px]">videocam_off</span>
+        </div>
+        @if (hayFiltros()) {
+          <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">No hay videobeams con estos filtros</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">No se encontraron equipos que coincidan con la búsqueda o el filtro seleccionado. Intenta limpiar los filtros.</p>
+        } @else {
+          <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">No hay videobeams registrados</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">Actualmente no hay equipos en el inventario. Puedes registrar uno nuevo con el botón de abajo.</p>
+          <button type="button" (click)="abrirForm()" class="mt-space-md h-9 px-space-md bg-primary-container text-on-primary rounded-sm font-label-md text-label-md hover:bg-secondary transition-colors">Registrar videobeam</button>
+        }
+      </div>
+    } @else {
+      <div class="bg-surface-container-lowest rounded-lg shadow-sm overflow-hidden border border-surface-container-high">
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-surface-container-low border-b border-surface-container-high">
+              <tr>
+                <th class="py-3 px-space-md font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold w-40">Código</th>
+                <th class="py-3 px-space-md font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Descripción</th>
+                <th class="py-3 px-space-md font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold w-48">Estado</th>
+                <th class="py-3 px-space-md font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold w-44 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-container-high font-body-sm text-body-sm">
+              @for (v of visibles(); track v.id) {
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5 px-space-md font-title-sm text-title-sm text-primary-container font-semibold">{{ v.codigo }}</td>
+                  <td class="py-3.5 px-space-md text-on-surface font-medium">{{ v.descripcion || '—' }}</td>
+                  <td class="py-3.5 px-space-md">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold" [class]="badge(v.estado).clases">
+                      <span class="w-1.5 h-1.5 rounded-full" [class]="badge(v.estado).punto"></span>{{ badge(v.estado).texto }}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-space-md text-right">
+                    <div class="flex items-center justify-end gap-space-xs">
+                      <button type="button" (click)="abrirForm(v)"
+                        class="h-8 px-2.5 rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">edit</span><span>Editar</span>
+                      </button>
+                      <button type="button" (click)="aEliminar.set(v)"
+                        class="h-8 px-2.5 rounded-sm bg-surface-container hover:bg-error-container hover:text-error text-outline font-label-sm text-label-sm transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">delete</span><span>Eliminar</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+</main>
+
+<!-- Modal: registrar / editar -->
+@if (formAbierto()) {
+  <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" (click)="cerrarForm()">
+    <div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md" role="dialog" aria-modal="true" aria-labelledby="tituloForm" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-surface-container-high pb-3">
+        <div class="flex items-center gap-2 text-primary-container">
+          <span class="material-symbols-outlined text-[24px]">videocam</span>
+          <h3 id="tituloForm" class="font-title-md text-title-md text-on-surface font-semibold">{{ editando() ? 'Editar videobeam' : 'Registrar videobeam' }}</h3>
+        </div>
+        <button type="button" (click)="cerrarForm()" aria-label="Cerrar" class="text-outline hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">close</span></button>
+      </div>
+
+      @if (errorForm()) {
+        <div class="p-3 rounded-sm bg-error-container text-on-error-container text-body-sm font-body-sm flex items-center gap-2" role="alert">
+          <span class="material-symbols-outlined text-[18px] shrink-0">error</span><span>{{ errorForm() }}</span>
+        </div>
+      }
+
+      <form class="flex flex-col gap-space-md" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div>
+          <label for="codigo" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Código <span class="text-error">*</span></label>
+          <input id="codigo" type="text" formControlName="codigo" maxlength="20" placeholder="Ej. VB-007"
+            class="w-full h-10 px-3 bg-surface-container-low rounded-sm border text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container transition-colors"
+            [class]="errorDe(form.controls.codigo) || errorForm() ? 'border-error' : 'border-transparent'">
+          @if (errorDe(form.controls.codigo); as msg) { <span class="text-error text-[12px] mt-1 block">{{ msg }}</span> }
+        </div>
+
+        <div>
+          <label for="descripcion" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Descripción <span class="text-error">*</span></label>
+          <input id="descripcion" type="text" formControlName="descripcion" maxlength="200" placeholder="Ej. Epson PowerLite X49"
+            class="w-full h-10 px-3 bg-surface-container-low rounded-sm border text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container transition-colors"
+            [class]="errorDe(form.controls.descripcion) ? 'border-error' : 'border-transparent'">
+          @if (errorDe(form.controls.descripcion); as msg) { <span class="text-error text-[12px] mt-1 block">{{ msg }}</span> }
+        </div>
+
+        <div>
+          <label for="estado" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Estado</label>
+          <select id="estado" formControlName="estado"
+            class="w-full h-10 px-3 bg-surface-container-low rounded-sm border border-transparent text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+            @for (e of estados; track e.valor) { <option [value]="e.valor">{{ e.texto }}</option> }
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end gap-space-xs pt-space-sm border-t border-surface-container-high mt-2">
+          <button type="button" (click)="cerrarForm()" class="h-10 px-space-md rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">Cancelar</button>
+          <button type="submit" [disabled]="guardando()"
+            class="h-10 px-space-md rounded-sm bg-primary-container hover:bg-secondary text-on-primary font-label-md text-label-md shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+            {{ guardando() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal: confirmar eliminación -->
+@if (aEliminar(); as v) {
+  <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" (click)="aEliminar.set(null)">
+    <div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="flex items-center gap-space-sm text-error">
+        <div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[24px]">delete_forever</span></div>
+        <h3 class="font-title-md text-title-md text-on-surface font-semibold">Confirmar eliminación</h3>
+      </div>
+      <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">¿Eliminar el videobeam {{ v.codigo }}?</p>
+      <div class="flex items-center justify-end gap-space-xs pt-space-sm border-t border-surface-container-high">
+        <button type="button" (click)="aEliminar.set(null)" class="h-10 px-space-md rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">Cancelar</button>
+        <button type="button" (click)="confirmarEliminar()" [disabled]="eliminando()" class="h-10 px-space-md rounded-sm bg-error hover:bg-on-error-container text-on-error font-label-md text-label-md shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed">Confirmar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: no se puede eliminar -->
+@if (eliminacionBloqueada()) {
+  <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" (click)="eliminacionBloqueada.set(false)">
+    <div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="flex items-center gap-space-sm text-error">
+        <div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[24px]">warning</span></div>
+        <h3 class="font-title-md text-title-md text-on-surface font-semibold">No es posible eliminar</h3>
+      </div>
+      <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">No se puede eliminar un videobeam que tiene reservas. Ponlo en mantenimiento.</p>
+      <div class="flex items-center justify-end pt-space-sm border-t border-surface-container-high">
+        <button type="button" (click)="eliminacionBloqueada.set(false)" class="h-10 px-space-md rounded-sm bg-primary-container hover:bg-secondary text-on-primary font-label-md text-label-md shadow-sm transition-all">Entendido</button>
+      </div>
+    </div>
+  </div>
+}

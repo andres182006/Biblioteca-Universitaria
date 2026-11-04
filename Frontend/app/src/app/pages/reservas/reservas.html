@@ -1,1 +1,304 @@
-<p>reservas works!</p>
+<!-- Notificaciones -->
+<div class="fixed bottom-6 right-6 z-[70] flex flex-col gap-2 pointer-events-none" aria-live="polite">
+  @for (t of toasts(); track t.id) {
+    <div class="pointer-events-auto px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-label-md font-label-md" [class]="toastClases(t)">
+      <span class="material-symbols-outlined text-[20px]">{{ t.tipo === 'ok' ? 'check_circle' : 'error' }}</span>
+      <span>{{ t.mensaje }}</span>
+      <button type="button" (click)="cerrarToast(t.id)" aria-label="Cerrar aviso" class="ml-1 hover:opacity-70"><span class="material-symbols-outlined text-[16px]">close</span></button>
+    </div>
+  }
+</div>
+
+<main class="w-full bg-surface px-gutter pt-24 pb-12 min-h-screen">
+  <div class="max-w-7xl mx-auto flex flex-col w-full">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
+      <div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Gestión de reservas de videobeams</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-1">Consulta las reservas, registra la entrega y la devolución de los equipos.</p>
+      </div>
+      <button type="button" (click)="cargar()"
+        class="h-10 px-space-md bg-surface-container-lowest border border-surface-container-high text-primary-container hover:bg-surface-container-high rounded-sm flex items-center gap-space-xs shadow-sm font-label-md text-label-md transition-all active:scale-95 shrink-0">
+        <span class="material-symbols-outlined text-[18px]">sync</span><span>Actualizar</span>
+      </button>
+    </div>
+
+    <!-- Métricas -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-lg">
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col justify-between border-l-4 border-l-on-tertiary-container">
+        <div class="flex items-center justify-between">
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Pendientes</span>
+          <div class="w-8 h-8 rounded-sm bg-tertiary-fixed flex items-center justify-center text-tertiary"><span class="material-symbols-outlined text-[18px]">schedule</span></div>
+        </div>
+        <div class="mt-space-sm">
+          <span class="font-display-lg text-display-lg text-on-surface font-bold">{{ conteos().pendiente }}</span>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Esperando entrega</p>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col justify-between border-l-4 border-l-secondary">
+        <div class="flex items-center justify-between">
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Entregadas</span>
+          <div class="w-8 h-8 rounded-sm bg-secondary-fixed flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[18px]">cast_connected</span></div>
+        </div>
+        <div class="mt-space-sm">
+          <span class="font-display-lg text-display-lg text-secondary font-bold">{{ conteos().entregado }}</span>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Actualmente en uso</p>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col justify-between border-l-4 border-l-primary-container">
+        <div class="flex items-center justify-between">
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Devueltas</span>
+          <div class="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center text-primary-container"><span class="material-symbols-outlined text-[18px]">check_circle</span></div>
+        </div>
+        <div class="mt-space-sm">
+          <span class="font-display-lg text-display-lg text-on-surface font-bold">{{ conteos().devuelto }}</span>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Finalizadas correctamente</p>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col justify-between border-l-4 border-l-error">
+        <div class="flex items-center justify-between">
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-error font-semibold">Canceladas</span>
+          <div class="w-8 h-8 rounded-sm bg-error-container flex items-center justify-center text-error"><span class="material-symbols-outlined text-[18px]">cancel</span></div>
+        </div>
+        <div class="mt-space-sm">
+          <span class="font-display-lg text-display-lg text-error font-bold">{{ conteos().cancelado }}</span>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Horarios liberados</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pestañas y filtros -->
+    <section class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm mb-space-lg flex flex-col gap-space-md">
+      <div class="flex flex-wrap items-center gap-space-xs border-b border-surface-container-high pb-space-sm">
+        @for (t of tabs; track t.valor) {
+          <button type="button" (click)="tab.set(t.valor)"
+            class="px-space-md py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+            [class]="tab() === t.valor ? 'bg-primary-container text-on-primary font-title-sm text-title-sm shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-label-md font-label-md'">
+            <span>{{ t.texto }}</span>
+            <span class="px-1.5 py-0.5 rounded-full font-label-sm text-label-sm"
+              [class]="tab() === t.valor ? 'bg-surface-container-lowest text-primary-container font-bold' : 'bg-surface-container text-on-surface-variant font-semibold'">{{ conteos()[t.valor] }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-space-sm items-center">
+        <div class="md:col-span-5 relative">
+          <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+          <input type="text" [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" placeholder="Buscar por docente o documento..."
+            class="w-full h-10 pl-9 pr-3 bg-surface-container-low rounded-sm text-on-surface placeholder:text-outline font-body-sm text-body-sm outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container">
+        </div>
+        <div class="md:col-span-3 flex items-center bg-surface-container-low rounded-sm h-10 px-2 gap-1">
+          <span class="material-symbols-outlined text-outline text-[18px]">calendar_today</span>
+          <input type="date" aria-label="Filtrar por fecha" [value]="fechaFiltro()" (change)="fechaFiltro.set($any($event.target).value)"
+            class="bg-transparent text-on-surface font-body-sm text-body-sm outline-none w-full cursor-pointer">
+          @if (fechaFiltro()) {
+            <button type="button" (click)="fechaFiltro.set('')" aria-label="Quitar fecha" class="text-outline hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">close</span></button>
+          }
+        </div>
+        <div class="md:col-span-3 flex items-center bg-surface-container-low rounded-sm h-10 px-2 gap-1">
+          <span class="material-symbols-outlined text-outline text-[18px]">videocam</span>
+          <select aria-label="Filtrar por videobeam" (change)="videobeamFiltro.set($any($event.target).value)"
+            class="bg-transparent text-on-surface font-body-sm text-body-sm outline-none w-full cursor-pointer">
+            <option value="todos" [selected]="videobeamFiltro() === 'todos'">Todos los videobeams</option>
+            @for (v of videobeams(); track v.id) {
+              <option [value]="v.id" [selected]="videobeamFiltro() === '' + v.id">{{ v.codigo }}{{ v.descripcion ? ' (' + v.descripcion + ')' : '' }}</option>
+            }
+          </select>
+        </div>
+        <div class="md:col-span-1 flex items-center justify-end">
+          <span class="font-label-sm text-label-sm text-on-surface-variant font-medium whitespace-nowrap text-right">Más recientes primero</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista -->
+    @if (cargando()) {
+      <div class="flex flex-col gap-space-md" aria-busy="true">
+        @for (i of [1, 2]; track i) {
+          <div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm animate-pulse flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <div class="h-5 bg-surface-container-high rounded-sm w-32"></div>
+              <div class="h-5 bg-surface-container-high rounded-sm w-24"></div>
+            </div>
+            <div class="h-4 bg-surface-container-high rounded-sm w-64"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="h-12 bg-surface-container-low rounded-sm"></div>
+              <div class="h-12 bg-surface-container-low rounded-sm"></div>
+              <div class="h-12 bg-surface-container-low rounded-sm"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (errorCarga()) {
+      <div class="bg-surface-container-lowest rounded-lg p-12 text-center shadow-sm flex flex-col items-center justify-center border border-error/30">
+        <div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-error mb-space-md"><span class="material-symbols-outlined text-[32px]">cloud_off</span></div>
+        <h3 class="font-headline-sm text-headline-sm text-error font-semibold">No se pudieron cargar las reservas</h3>
+        <p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">{{ errorCarga() }}</p>
+        <button type="button" (click)="cargar()" class="mt-space-md h-9 px-space-md bg-primary-container text-on-primary rounded-sm font-label-md text-label-md hover:bg-secondary transition-colors">Reintentar</button>
+      </div>
+    } @else if (visibles().length === 0) {
+      <div class="bg-surface-container-lowest rounded-lg p-12 text-center shadow-sm flex flex-col items-center justify-center">
+        <div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant mb-space-md"><span class="material-symbols-outlined text-[32px]">event_busy</span></div>
+        @if (hayFiltros()) {
+          <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">No hay reservas con estos filtros</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">No se encontraron reservas que coincidan con los criterios de búsqueda o fecha seleccionada. Intenta ajustar los filtros aplicados.</p>
+          <button type="button" (click)="restablecerFiltros()" class="mt-space-md h-9 px-space-md bg-primary-container text-on-primary rounded-sm font-label-md text-label-md hover:bg-secondary transition-colors">Restablecer filtros</button>
+        } @else {
+          <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Aún no hay reservas</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">Cuando los profesores reserven un videobeam, las reservas aparecerán aquí.</p>
+        }
+      </div>
+    } @else {
+      <div class="flex flex-col gap-space-md">
+        @for (r of visibles(); track r.id) {
+          <article class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm border-l-4 transition-all hover:shadow-md" [class]="estilo(r.estado).tarjeta">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+              <div class="flex-1">
+                <div class="flex flex-wrap items-center gap-space-xs mb-2">
+                  <span class="font-title-sm text-title-sm font-bold" [class]="estilo(r.estado).titulo">Reserva #{{ r.id }}</span>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold" [class]="estilo(r.estado).badge">
+                    <span class="w-1.5 h-1.5 rounded-full" [class]="estilo(r.estado).punto"></span>{{ estilo(r.estado).texto }}
+                  </span>
+                  @if (r.fechacreacion) {
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">· Creada: {{ r.fechacreacion | date: 'dd/MM/yyyy · HH:mm' }}</span>
+                  }
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm bg-surface-container-low p-space-sm rounded-sm mt-2">
+                  <div>
+                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Docente</span>
+                    <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ r.usuarioprofesor.nombrecompleto }}</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant block">Documento: {{ r.usuarioprofesor.documento }}</span>
+                  </div>
+                  <div>
+                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Equipo</span>
+                    <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ r.videobeam.codigo }}{{ r.videobeam.descripcion ? ' · ' + r.videobeam.descripcion : '' }}</span>
+                  </div>
+                  <div>
+                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Fecha y horario</span>
+                    <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ r.fechareserva | date: 'dd/MM/yyyy' }} · {{ hora(r.horainicio) }} – {{ hora(r.horafin) }}</span>
+                  </div>
+                </div>
+
+                @if (r.motivo) {
+                  <div class="mt-2 text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1.5">
+                    <span class="font-semibold text-on-surface">Motivo:</span><span>{{ r.motivo }}</span>
+                  </div>
+                }
+              </div>
+
+              @if (r.estado === 'pendiente') {
+                <div class="flex items-center gap-space-xs shrink-0 pt-space-xs lg:pt-0 border-t lg:border-t-0 border-surface-container-high">
+                  <button type="button" (click)="confirmar.set({ tipo: 'entregar', reserva: r })"
+                    class="h-9 px-space-md bg-primary-container hover:bg-secondary text-on-primary rounded-sm font-label-md text-label-md flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[18px]">verified</span><span>Entregar</span>
+                  </button>
+                  <button type="button" (click)="abrirModificar(r)"
+                    class="h-9 px-space-sm rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface text-label-sm font-label-sm flex items-center gap-1 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">edit</span><span>Modificar</span>
+                  </button>
+                  <button type="button" (click)="confirmar.set({ tipo: 'cancelar', reserva: r })"
+                    class="h-9 px-space-sm rounded-sm bg-surface-container hover:bg-error-container hover:text-error text-outline text-label-sm font-label-sm flex items-center gap-1 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">cancel</span><span>Cancelar</span>
+                  </button>
+                </div>
+              } @else if (r.estado === 'entregado') {
+                <div class="flex items-center gap-space-xs shrink-0 pt-space-xs lg:pt-0 border-t lg:border-t-0 border-surface-container-high">
+                  <button type="button" (click)="confirmar.set({ tipo: 'devolver', reserva: r })"
+                    class="h-9 px-space-md bg-secondary hover:bg-primary-container text-on-primary rounded-sm font-label-md text-label-md flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[18px]">assignment_turned_in</span><span>Registrar devolución</span>
+                  </button>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</main>
+
+<!-- Modal: confirmar entrega, devolución o cancelación -->
+@if (confirmar(); as c) {
+  <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" (click)="confirmar.set(null)">
+    <div class="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-xl flex flex-col gap-space-md" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="flex items-center gap-space-sm">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" [class]="meta(c.tipo).iconoClases">
+          <span class="material-symbols-outlined text-[24px]">{{ meta(c.tipo).icono }}</span>
+        </div>
+        <h3 class="font-title-md text-title-md text-on-surface">{{ meta(c.tipo).titulo }}</h3>
+      </div>
+      <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">{{ textoConfirmacion(c) }}</p>
+      <div class="flex items-center justify-end gap-space-xs pt-space-sm border-t border-surface-container-high">
+        <button type="button" (click)="confirmar.set(null)" class="h-10 px-space-md rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">{{ meta(c.tipo).cancelar }}</button>
+        <button type="button" (click)="ejecutar()" [disabled]="procesando()"
+          class="h-10 px-space-md rounded-sm text-on-primary font-label-md text-label-md shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed" [class]="meta(c.tipo).botonClases">
+          {{ meta(c.tipo).boton }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: modificar reserva -->
+@if (editando(); as r) {
+  <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" (click)="cerrarModificar()">
+    <div class="bg-surface-container-lowest rounded-xl max-w-lg w-full p-space-lg shadow-xl flex flex-col gap-space-md my-8" role="dialog" aria-modal="true" aria-labelledby="tituloModificar" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-surface-container-high pb-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary-container text-[22px]">edit_calendar</span>
+          <h3 id="tituloModificar" class="font-title-md text-title-md text-on-surface">Modificar reserva #{{ r.id }}</h3>
+        </div>
+        <button type="button" (click)="cerrarModificar()" aria-label="Cerrar" class="text-outline hover:text-on-surface"><span class="material-symbols-outlined text-[20px]">close</span></button>
+      </div>
+
+      @if (errorForm()) {
+        <div class="p-3 rounded-sm bg-error-container text-on-error-container text-body-sm font-body-sm flex items-center gap-2" role="alert">
+          <span class="material-symbols-outlined text-[18px] shrink-0">error</span><span>{{ errorForm() }}</span>
+        </div>
+      }
+
+      <form class="flex flex-col gap-space-sm" [formGroup]="form" (ngSubmit)="guardarModificacion()" novalidate>
+        <div>
+          <label for="modFecha" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Fecha</label>
+          <input id="modFecha" type="date" formControlName="fechareserva" [min]="hoy"
+            class="w-full h-10 px-3 bg-surface-container-low rounded-sm border-0 text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container">
+        </div>
+        <div class="grid grid-cols-2 gap-space-sm">
+          <div>
+            <label for="modInicio" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Hora de inicio</label>
+            <input id="modInicio" type="time" formControlName="horainicio"
+              class="w-full h-10 px-3 bg-surface-container-low rounded-sm border-0 text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container">
+          </div>
+          <div>
+            <label for="modFin" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Hora de fin</label>
+            <input id="modFin" type="time" formControlName="horafin"
+              class="w-full h-10 px-3 bg-surface-container-low rounded-sm border-0 text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container">
+          </div>
+        </div>
+        <div>
+          <label for="modVideobeam" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Videobeam</label>
+          <select id="modVideobeam" formControlName="idvideobeam"
+            class="w-full h-10 px-3 bg-surface-container-low rounded-sm border-0 text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+            @for (v of videobeams(); track v.id) {
+              <option [ngValue]="v.id">{{ v.codigo }}{{ v.descripcion ? ' · ' + v.descripcion : '' }}{{ v.estado === 'mantenimiento' ? ' (En mantenimiento)' : '' }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="modMotivo" class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant block mb-1">Motivo</label>
+          <textarea id="modMotivo" rows="2" maxlength="200" formControlName="motivo" placeholder="Motivo o propósito de la reserva académica"
+            class="w-full p-3 bg-surface-container-low rounded-sm border-0 text-on-surface text-body-sm outline-none focus:ring-1 focus:ring-primary-container"></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-space-xs pt-space-sm border-t border-surface-container-high mt-2">
+          <button type="button" (click)="cerrarModificar()" class="h-10 px-space-md rounded-sm bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors">Cancelar</button>
+          <button type="submit" [disabled]="procesando()"
+            class="h-10 px-space-md rounded-sm bg-primary-container hover:bg-secondary text-on-primary font-label-md text-label-md shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+            {{ procesando() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

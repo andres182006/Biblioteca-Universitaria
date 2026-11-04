@@ -1,1 +1,502 @@
-<p>usuarios works!</p>
+<!-- Notificaciones -->
+<div class="fixed top-20 right-8 z-[70] flex flex-col gap-2 pointer-events-none" aria-live="polite">
+  @for (t of toasts(); track t.id) {
+    <div class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-body-md font-body-md max-w-md" [class]="toastClases(t)">
+      <span class="material-symbols-outlined text-[20px]">{{ t.tipo === 'ok' ? 'check_circle' : 'error' }}</span>
+      <span class="font-medium">{{ t.mensaje }}</span>
+      <button type="button" (click)="cerrarToast(t.id)" aria-label="Cerrar aviso" class="ml-1 hover:opacity-70"><span class="material-symbols-outlined text-[16px]">close</span></button>
+    </div>
+  }
+</div>
+
+<main class="relative w-full bg-surface min-h-screen px-gutter pt-24 pb-12">
+  <div class="flex flex-col w-full">
+
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div class="flex flex-col">
+        <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Usuarios</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Administra los estudiantes y profesores registrados en el sistema de biblioteca CTEV</p>
+      </div>
+      <button type="button" (click)="abrirNuevo()"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-sm bg-primary-container text-on-primary font-title-sm text-title-sm shadow-sm hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container">
+        <span class="material-symbols-outlined text-[20px]">person_add</span>
+        <span>Nuevo usuario</span>
+      </button>
+    </div>
+
+    <!-- Métricas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div class="relative bg-surface-container-lowest rounded-lg p-5 shadow-sm overflow-hidden border-t-[3px] border-secondary">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Estudiantes registrados</span>
+            <span class="font-headline-lg text-headline-lg text-primary mt-1 font-bold">{{ estudiantes().length }}</span>
+            <span class="font-body-sm text-body-sm text-secondary font-medium mt-1">Estudiantes registrados en el sistema</span>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[28px]">school</span></div>
+        </div>
+      </div>
+      <div class="relative bg-surface-container-lowest rounded-lg p-5 shadow-sm overflow-hidden border-t-[3px] border-on-tertiary-container">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Profesores registrados</span>
+            <span class="font-headline-lg text-headline-lg text-primary mt-1 font-bold">{{ profesores().length }}</span>
+            <span class="font-body-sm text-body-sm text-on-tertiary-container font-medium mt-1">Profesores registrados en el sistema</span>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed"><span class="material-symbols-outlined text-[28px]">co_present</span></div>
+        </div>
+      </div>
+      <div class="relative bg-surface-container-lowest rounded-lg p-5 shadow-sm overflow-hidden border-t-[3px] border-primary-container">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">Total estudiantes y profesores</span>
+            <span class="font-headline-lg text-headline-lg text-primary mt-1 font-bold">{{ total() }}</span>
+            <span class="font-body-sm text-body-sm text-on-surface-variant font-medium mt-1">{{ total() }} registros en ambas categorías</span>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary-container"><span class="material-symbols-outlined text-[28px]">groups</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="bg-surface-container-lowest rounded-lg shadow-sm overflow-hidden flex flex-col">
+
+      <div class="p-5 bg-surface-container-lowest flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="inline-flex p-1 rounded-sm bg-surface-container-low self-start">
+          <button type="button" (click)="cambiarTab('estudiantes')"
+            class="flex items-center gap-2 px-4 py-2 rounded-sm font-title-sm text-title-sm transition-all"
+            [class]="tab() === 'estudiantes' ? 'bg-primary-container text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container/60'">
+            <span class="material-symbols-outlined text-[18px]">school</span>
+            <span>Estudiantes</span>
+            <span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm font-bold"
+              [class]="tab() === 'estudiantes' ? 'bg-surface-container-high text-primary-container' : 'bg-surface-container text-on-surface-variant'">{{ estudiantes().length }}</span>
+          </button>
+          <button type="button" (click)="cambiarTab('profesores')"
+            class="flex items-center gap-2 px-4 py-2 rounded-sm font-title-sm text-title-sm transition-all"
+            [class]="tab() === 'profesores' ? 'bg-primary-container text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container/60'">
+            <span class="material-symbols-outlined text-[18px]">co_present</span>
+            <span>Profesores</span>
+            <span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm font-bold"
+              [class]="tab() === 'profesores' ? 'bg-surface-container-high text-primary-container' : 'bg-surface-container text-on-surface-variant'">{{ profesores().length }}</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <div class="relative w-full md:w-80">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">search</span>
+            <input type="text" [value]="busqueda()" (input)="busqueda.set($any($event.target).value)"
+              placeholder="Buscar por nombre, documento o correo..."
+              class="w-full h-10 pl-10 pr-9 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container shadow-inner">
+            @if (busqueda()) {
+              <button type="button" (click)="busqueda.set('')" title="Borrar búsqueda" aria-label="Borrar búsqueda"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            }
+          </div>
+          <button type="button" (click)="restablecer()" title="Restablecer filtros" aria-label="Restablecer filtros"
+            class="h-10 w-10 shrink-0 rounded-sm bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center transition-colors">
+            <span class="material-symbols-outlined text-[20px]">refresh</span>
+          </button>
+        </div>
+      </div>
+
+      @if (cargando()) {
+        <div class="p-6 space-y-4 animate-pulse" aria-busy="true">
+          <div class="h-8 bg-surface-container rounded-sm w-full"></div>
+          @for (i of [1, 2, 3, 4, 5]; track i) { <div class="h-12 bg-surface-container-low rounded-sm w-full"></div> }
+        </div>
+      } @else if (errorCarga()) {
+        <div class="py-16 px-6 flex flex-col items-center justify-center text-center">
+          <div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-error mb-3"><span class="material-symbols-outlined text-[32px]">cloud_off</span></div>
+          <p class="font-headline-sm text-headline-sm text-error font-semibold">No se pudieron cargar los usuarios</p>
+          <p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mt-1 mb-4">{{ errorCarga() }}</p>
+          <button type="button" (click)="cargar()" class="px-4 py-2.5 rounded-sm bg-primary-container text-on-primary font-title-sm text-title-sm hover:bg-secondary transition-colors">Reintentar</button>
+        </div>
+      } @else if (tab() === 'estudiantes') {
+
+        <!-- Estudiantes -->
+        @if (visiblesEstudiantes().length === 0) {
+          <div class="py-16 px-6 flex flex-col items-center justify-center text-center">
+            <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-3"><span class="material-symbols-outlined text-[32px]">school</span></div>
+            @if (busqueda().trim()) {
+              <p class="font-headline-sm text-headline-sm text-on-surface font-semibold">No se encontraron estudiantes</p>
+              <p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mt-1">No existen coincidencias para el criterio: "{{ busqueda().trim() }}".</p>
+            } @else {
+              <p class="font-headline-sm text-headline-sm text-on-surface font-semibold">No hay estudiantes registrados</p>
+              <p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mt-1">El catálogo de estudiantes se encuentra vacío actualmente.</p>
+            }
+          </div>
+        } @else {
+          <div class="w-full overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                  <th class="py-3 px-6 font-semibold">Nombre completo</th>
+                  <th class="py-3 px-6 font-semibold">Documento</th>
+                  <th class="py-3 px-6 font-semibold">Correo electrónico</th>
+                  <th class="py-3 px-6 font-semibold">Teléfono</th>
+                  <th class="py-3 px-6 font-semibold">Fecha de registro</th>
+                  <th class="py-3 px-6 font-semibold text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="font-body-md text-body-md text-on-surface">
+                @for (e of visiblesEstudiantes(); track e.id) {
+                  <tr class="hover:bg-surface-container-low/60 transition-colors border-b border-surface-container-high/40 last:border-b-0">
+                    <td class="py-3.5 px-6 font-semibold text-primary">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-surface-container-high text-secondary flex items-center justify-center font-bold text-label-sm">{{ inicial(e.nombrecompleto) }}</div>
+                        <span>{{ e.nombrecompleto }}</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-6 font-medium text-on-surface-variant font-body-sm">{{ e.documento }}</td>
+                    <td class="py-3.5 px-6 text-on-surface-variant font-body-sm">{{ e.correo }}</td>
+                    <td class="py-3.5 px-6 text-on-surface-variant font-body-sm">{{ e.telefono || '—' }}</td>
+                    <td class="py-3.5 px-6 text-on-surface-variant font-body-sm">{{ e.fecharegistro ? (e.fecharegistro | date: 'dd/MM/yyyy') : '—' }}</td>
+                    <td class="py-3.5 px-6 text-right">
+                      <div class="inline-flex items-center gap-2 justify-end">
+                        <button type="button" (click)="abrirEditar('estudiante', e)" title="Editar datos del estudiante"
+                          class="px-2.5 py-1 rounded-sm bg-surface-container-low hover:bg-surface-container text-secondary font-title-sm text-body-sm flex items-center gap-1 transition-colors">
+                          <span class="material-symbols-outlined text-[16px]">edit</span><span>Editar</span>
+                        </button>
+                        <button type="button" (click)="aEliminar.set(e)" title="Eliminar registro"
+                          class="px-2.5 py-1 rounded-sm bg-surface-container-low hover:bg-error-container hover:text-on-error-container text-on-surface-variant font-title-sm text-body-sm flex items-center gap-1 transition-colors">
+                          <span class="material-symbols-outlined text-[16px]">delete</span><span>Eliminar</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        <div class="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+          <span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Mostrando {{ visiblesEstudiantes().length }} de {{ estudiantes().length }} estudiantes</span>
+          <div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+            <span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span><span>CTEV · Base de usuarios oficial</span>
+          </div>
+        </div>
+
+      } @else {
+
+        <!-- Profesores -->
+        @if (visiblesProfesores().length === 0) {
+          <div class="py-16 px-6 flex flex-col items-center justify-center text-center">
+            <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-3"><span class="material-symbols-outlined text-[32px]">co_present</span></div>
+            @if (busqueda().trim()) {
+              <p class="font-headline-sm text-headline-sm text-on-surface font-semibold">No se encontraron profesores</p>
+              <p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mt-1">No existen coincidencias con: "{{ busqueda().trim() }}".</p>
+            } @else {
+              <p class="font-headline-sm text-headline-sm text-on-surface font-semibold">No hay profesores registrados</p>
+              <p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mt-1">No existen docentes registrados en el sistema CTEV.</p>
+            }
+          </div>
+        } @else {
+          <div class="w-full overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                  <th class="py-3 px-6 font-semibold">Nombre completo</th>
+                  <th class="py-3 px-6 font-semibold">Documento</th>
+                  <th class="py-3 px-6 font-semibold">Correo electrónico</th>
+                  <th class="py-3 px-6 font-semibold">Fecha de registro</th>
+                  <th class="py-3 px-6 font-semibold text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="font-body-md text-body-md text-on-surface">
+                @for (p of visiblesProfesores(); track p.id) {
+                  <tr class="hover:bg-surface-container-low/60 transition-colors border-b border-surface-container-high/40 last:border-b-0">
+                    <td class="py-3.5 px-6 font-semibold text-primary">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-bold text-label-sm">{{ inicial(p.nombrecompleto) }}</div>
+                        <span>{{ p.nombrecompleto }}</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-6 font-medium text-on-surface-variant font-body-sm">{{ p.documento }}</td>
+                    <td class="py-3.5 px-6 text-on-surface-variant font-body-sm">{{ p.correo }}</td>
+                    <td class="py-3.5 px-6 text-on-surface-variant font-body-sm">{{ p.fecharegistro ? (p.fecharegistro | date: 'dd/MM/yyyy') : '—' }}</td>
+                    <td class="py-3.5 px-6 text-right">
+                      <div class="inline-flex items-center gap-2 justify-end">
+                        <button type="button" (click)="detalle.set(p)" title="Ver ficha informativa"
+                          class="px-2.5 py-1 rounded-sm bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-title-sm text-body-sm flex items-center gap-1 transition-colors">
+                          <span class="material-symbols-outlined text-[16px]">visibility</span><span>Ver detalles</span>
+                        </button>
+                        <button type="button" (click)="abrirEditar('profesor', p)" title="Editar información docente"
+                          class="px-2.5 py-1 rounded-sm bg-surface-container-low hover:bg-surface-container text-secondary font-title-sm text-body-sm flex items-center gap-1 transition-colors">
+                          <span class="material-symbols-outlined text-[16px]">edit</span><span>Editar</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        <div class="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+          <span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Mostrando {{ visiblesProfesores().length }} de {{ profesores().length }} profesores</span>
+          <div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+            <span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span><span>CTEV · Base de usuarios oficial</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</main>
+
+<!-- Panel: nuevo usuario -->
+@if (nuevoAbierto()) {
+  <div class="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="tituloNuevo">
+    <div class="absolute inset-0 bg-primary/40 backdrop-blur-sm" (click)="cerrarNuevo()"></div>
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div class="w-screen max-w-md bg-surface-container-lowest shadow-2xl flex flex-col">
+        <div class="p-6 bg-primary-container text-on-primary flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[24px]">person_add</span>
+            <div>
+              <h2 id="tituloNuevo" class="font-headline-sm text-headline-sm font-bold leading-tight">Nuevo usuario</h2>
+              <p class="font-body-sm text-body-sm text-on-primary-container">Ingreso al registro bibliotecario</p>
+            </div>
+          </div>
+          <button type="button" (click)="cerrarNuevo()" aria-label="Cerrar panel" class="text-on-primary-container hover:text-on-primary p-1 rounded-sm hover:bg-surface-container-high/20">
+            <span class="material-symbols-outlined text-[24px]">close</span>
+          </button>
+        </div>
+
+        <form id="formNuevo" class="flex-1 overflow-y-auto p-6 space-y-5" [formGroup]="formNuevo" (ngSubmit)="guardarNuevo()" novalidate>
+          <div>
+            <span class="block font-label-md text-label-md text-on-surface font-semibold mb-2">Tipo de usuario *</span>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex items-center justify-center gap-2 p-3 rounded-sm bg-surface-container-low cursor-pointer font-title-sm text-title-sm text-on-surface hover:bg-surface-container has-[:checked]:bg-primary-container has-[:checked]:text-on-primary transition-colors">
+                <input type="radio" name="nuevoTipo" class="sr-only" [checked]="tipoNuevo() === 'estudiante'" (change)="tipoNuevo.set('estudiante')">
+                <span class="material-symbols-outlined text-[20px]">school</span><span>Estudiante</span>
+              </label>
+              <label class="flex items-center justify-center gap-2 p-3 rounded-sm bg-surface-container-low cursor-pointer font-title-sm text-title-sm text-on-surface hover:bg-surface-container has-[:checked]:bg-primary-container has-[:checked]:text-on-primary transition-colors">
+                <input type="radio" name="nuevoTipo" class="sr-only" [checked]="tipoNuevo() === 'profesor'" (change)="tipoNuevo.set('profesor')">
+                <span class="material-symbols-outlined text-[20px]">co_present</span><span>Profesor</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="nuevoNombre">Nombre completo *</label>
+            <input id="nuevoNombre" type="text" formControlName="nombrecompleto" maxlength="120" placeholder="Ej. Andrés Felipe Morales"
+              class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container"
+              [class]="errorDe(formNuevo.controls.nombrecompleto) ? 'ring-2 ring-error' : ''">
+            @if (errorDe(formNuevo.controls.nombrecompleto); as msg) { <span class="font-body-sm text-body-sm text-error mt-1 block">{{ msg }}</span> }
+          </div>
+
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="nuevoDocumento">Documento de identidad *</label>
+            <input id="nuevoDocumento" type="text" formControlName="documento" maxlength="20" placeholder="Ej. 1047889001"
+              class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container"
+              [class]="errorDe(formNuevo.controls.documento) ? 'ring-2 ring-error' : ''">
+            @if (errorDe(formNuevo.controls.documento); as msg) { <span class="font-body-sm text-body-sm text-error mt-1 block">{{ msg }}</span> }
+          </div>
+
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="nuevoCorreo">Correo electrónico *</label>
+            <input id="nuevoCorreo" type="email" formControlName="correo" maxlength="120" placeholder="usuario@ejemplo.com" autocomplete="off"
+              class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container"
+              [class]="errorDe(formNuevo.controls.correo) ? 'ring-2 ring-error' : ''">
+            @if (errorDe(formNuevo.controls.correo); as msg) { <span class="font-body-sm text-body-sm text-error mt-1 block">{{ msg }}</span> }
+          </div>
+
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="nuevoPassword">Contraseña de acceso * (8-72 caracteres)</label>
+            <div class="relative">
+              <input id="nuevoPassword" [type]="verClave() ? 'text' : 'password'" formControlName="contrasena" maxlength="72" placeholder="Mínimo 8 caracteres" autocomplete="new-password"
+                class="w-full h-10 pl-3.5 pr-10 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container"
+                [class]="errorDe(formNuevo.controls.contrasena) ? 'ring-2 ring-error' : ''">
+              <button type="button" (click)="verClave.set(!verClave())" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
+                <span class="material-symbols-outlined text-[20px]">{{ verClave() ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+            @if (errorDe(formNuevo.controls.contrasena); as msg) { <span class="font-body-sm text-body-sm text-error mt-1 block">{{ msg }}</span> }
+          </div>
+
+          @if (tipoNuevo() === 'estudiante') {
+            <div>
+              <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="nuevoTelefono">Teléfono de contacto (Opcional)</label>
+              <input id="nuevoTelefono" type="text" formControlName="telefono" maxlength="20" placeholder="Ej. 300 123 4567"
+                class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container">
+            </div>
+          } @else {
+            <div class="p-3 rounded-sm bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm flex items-start gap-2">
+              <span class="material-symbols-outlined text-[18px] text-secondary shrink-0 mt-0.5">info</span>
+              <span>El registro de profesores no requiere número telefónico.</span>
+            </div>
+          }
+        </form>
+
+        <div class="p-6 bg-surface-container-low flex items-center justify-end gap-3">
+          <button type="button" (click)="cerrarNuevo()" class="px-4 py-2.5 rounded-sm bg-surface-container-lowest text-on-surface font-title-sm text-title-sm hover:bg-surface-container transition-colors">Cancelar</button>
+          <button type="submit" form="formNuevo" [disabled]="guardando()"
+            class="px-4 py-2.5 rounded-sm bg-primary-container text-on-primary font-title-sm text-title-sm hover:bg-secondary transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+            {{ guardando() ? 'Registrando…' : 'Registrar usuario' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Panel: editar usuario -->
+@if (editando(); as ed) {
+  <div class="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="tituloEditar">
+    <div class="absolute inset-0 bg-primary/40 backdrop-blur-sm" (click)="cerrarEditar()"></div>
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div class="w-screen max-w-md bg-surface-container-lowest shadow-2xl flex flex-col">
+        <div class="p-6 bg-secondary text-on-secondary flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[24px]">edit</span>
+            <div>
+              <h2 id="tituloEditar" class="font-headline-sm text-headline-sm font-bold leading-tight">{{ ed.tipo === 'estudiante' ? 'Editar estudiante' : 'Editar profesor' }}</h2>
+              <p class="font-body-sm text-body-sm text-surface-container-high">{{ ed.tipo === 'estudiante' ? 'Actualización de contacto y datos' : 'Actualización de datos de profesor' }}</p>
+            </div>
+          </div>
+          <button type="button" (click)="cerrarEditar()" aria-label="Cerrar panel" class="text-on-secondary/80 hover:text-on-secondary p-1 rounded-sm hover:bg-surface-container-high/20">
+            <span class="material-symbols-outlined text-[24px]">close</span>
+          </button>
+        </div>
+
+        <form id="formEditar" class="flex-1 overflow-y-auto p-6 space-y-5" [formGroup]="formEditar" (ngSubmit)="guardarEditar()" novalidate>
+          <div>
+            <span class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5">Documento de identidad</span>
+            <input type="text" [value]="ed.documento" disabled class="w-full h-10 px-3.5 rounded-sm bg-surface-container text-on-surface-variant font-body-md text-body-md cursor-not-allowed opacity-90">
+            <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">lock</span>El documento no puede ser modificado
+            </p>
+          </div>
+
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="editNombre">Nombre completo *</label>
+            <input id="editNombre" type="text" formControlName="nombrecompleto" maxlength="120"
+              class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-secondary"
+              [class]="errorDe(formEditar.controls.nombrecompleto) ? 'ring-2 ring-error' : ''">
+            @if (errorDe(formEditar.controls.nombrecompleto); as msg) { <span class="font-body-sm text-body-sm text-error mt-1 block">{{ msg }}</span> }
+          </div>
+
+          <div>
+            <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="editCorreo">Correo electrónico *</label>
+            <input id="editCorreo" type="email" formControlName="correo" maxlength="120" placeholder="usuario@ejemplo.com"
+              class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-secondary"
+              [class]="errorDe(formEditar.controls.correo) ? 'ring-2 ring-error' : ''">
+            @if (errorDe(formEditar.controls.correo); as msg) { <span class="font-body-sm text-body-sm text-error mt-1 block">{{ msg }}</span> }
+          </div>
+
+          @if (ed.tipo === 'estudiante') {
+            <div>
+              <label class="block font-label-md text-label-md text-on-surface font-semibold mb-1.5" for="editTelefono">Teléfono de contacto</label>
+              <input id="editTelefono" type="text" formControlName="telefono" maxlength="20" placeholder="Ej. 300 123 4567"
+                class="w-full h-10 px-3.5 rounded-sm bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-secondary">
+            </div>
+          }
+        </form>
+
+        <div class="p-6 bg-surface-container-low flex items-center justify-end gap-3">
+          <button type="button" (click)="cerrarEditar()" class="px-4 py-2.5 rounded-sm bg-surface-container-lowest text-on-surface font-title-sm text-title-sm hover:bg-surface-container transition-colors">Cancelar</button>
+          <button type="submit" form="formEditar" [disabled]="guardando()"
+            class="px-4 py-2.5 rounded-sm bg-secondary text-on-secondary font-title-sm text-title-sm hover:bg-primary-container transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+            {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: ficha del profesor -->
+@if (detalle(); as d) {
+  <div class="fixed inset-0 z-[60] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="tituloDetalle">
+    <div class="fixed inset-0 bg-primary/40 backdrop-blur-sm" (click)="detalle.set(null)"></div>
+    <div class="w-full max-w-lg p-6 text-left bg-surface-container-lowest rounded-lg shadow-xl relative z-10 border-t-4 border-on-tertiary-container">
+      <div class="flex items-center justify-between pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center"><span class="material-symbols-outlined text-[24px]">co_present</span></div>
+          <div>
+            <h3 id="tituloDetalle" class="font-headline-sm text-headline-sm font-bold text-primary">Ficha del profesor</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">Datos del cuerpo docente registrado</p>
+          </div>
+        </div>
+        <button type="button" (click)="detalle.set(null)" aria-label="Cerrar" class="text-on-surface-variant hover:text-on-surface p-1 rounded-sm hover:bg-surface-container"><span class="material-symbols-outlined text-[20px]">close</span></button>
+      </div>
+      <div class="space-y-4 py-4">
+        <div class="p-4 rounded-lg bg-surface-container-low flex flex-col gap-1">
+          <span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Nombre completo</span>
+          <span class="font-title-md text-title-md text-on-surface">{{ d.nombrecompleto }}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+            <span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Documento</span>
+            <span class="font-title-sm text-title-sm text-on-surface">{{ d.documento }}</span>
+          </div>
+          <div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+            <span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Rol institucional</span>
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-fixed text-on-tertiary-fixed font-bold w-fit">
+              <span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>Profesor CTEV
+            </span>
+          </div>
+        </div>
+        <div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+          <span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Correo institucional</span>
+          <span class="font-title-sm text-title-sm text-primary break-all">{{ d.correo }}</span>
+        </div>
+        <div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+          <span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Fecha de registro en biblioteca</span>
+          <span class="font-title-sm text-title-sm text-on-surface">{{ d.fecharegistro ? (d.fecharegistro | date: 'dd/MM/yyyy') : '—' }}</span>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end">
+        <button type="button" (click)="detalle.set(null)" class="px-4 py-2 rounded-sm bg-surface-container text-on-surface font-title-sm text-title-sm hover:bg-surface-container-high transition-colors">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: confirmar eliminación -->
+@if (aEliminar(); as e) {
+  <div class="fixed inset-0 z-[60] flex items-center justify-center px-4" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-primary/40 backdrop-blur-sm" (click)="aEliminar.set(null)"></div>
+    <div class="w-full max-w-md p-6 text-left bg-surface-container-lowest rounded-lg shadow-xl relative z-10 border-t-4 border-error">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[24px]">delete_forever</span></div>
+        <div>
+          <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">¿Eliminar estudiante?</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant mt-2">
+            Esta acción eliminará permanentemente al estudiante <strong class="text-on-surface">{{ e.nombrecompleto }}</strong>
+            y su cuenta de acceso. No se podrá revertir.
+          </p>
+        </div>
+      </div>
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <button type="button" (click)="aEliminar.set(null)" class="px-4 py-2 rounded-sm bg-surface-container-low text-on-surface font-title-sm text-title-sm hover:bg-surface-container transition-colors">Cancelar</button>
+        <button type="button" (click)="confirmarEliminar()" [disabled]="eliminando()" class="px-4 py-2 rounded-sm bg-error text-on-error font-title-sm text-title-sm hover:bg-on-error-container transition-colors disabled:opacity-60 disabled:cursor-not-allowed">Eliminar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal: eliminación bloqueada -->
+@if (bloqueado(); as b) {
+  <div class="fixed inset-0 z-[60] flex items-center justify-center px-4" role="alertdialog" aria-modal="true">
+    <div class="fixed inset-0 bg-primary/40 backdrop-blur-sm" (click)="bloqueado.set(null)"></div>
+    <div class="w-full max-w-md p-6 text-left bg-surface-container-lowest rounded-lg shadow-xl relative z-10 border-t-4 border-on-tertiary-container">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[24px]">gavel</span></div>
+        <div>
+          <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">No se puede eliminar el estudiante</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant mt-2">
+            {{ b.nombrecompleto }} tiene préstamos registrados en el sistema. No es posible eliminarlo porque debe conservarse su historial de préstamos.
+          </p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button type="button" (click)="bloqueado.set(null)" class="px-5 py-2.5 rounded-sm bg-primary-container text-on-primary font-title-sm text-title-sm hover:bg-secondary transition-colors">Entendido</button>
+      </div>
+    </div>
+  </div>
+}

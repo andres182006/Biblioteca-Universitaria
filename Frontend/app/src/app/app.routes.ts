@@ -7,6 +7,9 @@ import { Devolusionesprestamos } from './pages/devolusionesprestamos/devolusione
 import { Prestamoestudiante } from './pages/prestamoestudiante/prestamoestudiante';
 import { Videobeamsprofesores } from './pages/videobeamsprofesores/videobeamsprofesores';
 import { Libros } from './pages/libros/libro';
+import { Usuarios } from './pages/usuarios/usuarios';
+import { Videobeams } from './pages/videobeams/videobeams';
+import { Reservas } from './pages/reservas/reservas';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -21,7 +24,10 @@ export const routes: Routes = [
     children: [
       { path: 'prestamos', component: Prestamos },
       { path: 'devoluciones', component: Devolusionesprestamos },
-      {path: 'libros', component: Libros}
+      {path: 'libros', component: Libros},
+      {path: 'usuarios', component: Usuarios},
+      {path: 'videobeams', component: Videobeams},
+      {path: 'reservas', component: Reservas},
     ]
   },
 

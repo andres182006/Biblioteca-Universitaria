@@ -3,6 +3,11 @@
 @import "tailwindcss";
 
 @theme {
+  --color-tertiary: #170e00;
+  --color-surface-container-highest: #d3e4fe;
+  --color-on-secondary-fixed-variant: #1d477c;
+  --color-on-tertiary-fixed-variant: #5d4200;
+
   --color-primary: #0b2545;
   --color-primary-container: #163d68;
   --color-on-primary: #ffffff;
